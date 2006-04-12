@@ -1,0 +1,23 @@
+<configure 
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:meta="http://namespaces.zope.org/meta">
+
+  <meta:directive 
+      namespace="http://namespaces.zope.org/mail"
+      name="queuedDelivery" 
+      schema=".metadirectives.IQueuedDeliveryDirective"
+      handler=".metaconfigure.queuedDelivery" />
+
+  <meta:directive 
+      namespace="http://namespaces.zope.org/mail"
+      name="directDelivery" 
+      schema=".metadirectives.IDirectDeliveryDirective"
+      handler=".metaconfigure.directDelivery" />
+
+  <meta:directive 
+      namespace="http://namespaces.zope.org/mail"
+      name="smtpMailer" 
+      schema=".metadirectives.ISMTPMailerDirective"
+      handler=".metaconfigure.smtpMailer" />
+
+</configure>
