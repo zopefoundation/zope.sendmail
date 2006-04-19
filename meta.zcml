@@ -5,19 +5,22 @@
   <meta:directive 
       namespace="http://namespaces.zope.org/mail"
       name="queuedDelivery" 
-      schema=".metadirectives.IQueuedDeliveryDirective"
-      handler=".metaconfigure.queuedDelivery" />
+      schema=".zcml.IQueuedDeliveryDirective"
+      handler=".zcml.queuedDelivery"
+      />
 
   <meta:directive 
       namespace="http://namespaces.zope.org/mail"
       name="directDelivery" 
-      schema=".metadirectives.IDirectDeliveryDirective"
-      handler=".metaconfigure.directDelivery" />
+      schema=".zcml.IDirectDeliveryDirective"
+      handler=".zcml.directDelivery"
+      />
 
   <meta:directive 
       namespace="http://namespaces.zope.org/mail"
       name="smtpMailer" 
-      schema=".metadirectives.ISMTPMailerDirective"
-      handler=".metaconfigure.smtpMailer" />
+      schema=".zcml.ISMTPMailerDirective"
+      handler=".zcml.smtpMailer"
+      />
 
 </configure>
