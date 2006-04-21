@@ -20,11 +20,13 @@ __docformat__ = 'restructuredtext'
 import os
 import socket
 import time
+import random
 
 from zope.interface import implements, classProvides
 
 from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
+
 
 class Maildir(object):
     """See `zope.sendmail.interfaces.IMaildir`"""
@@ -80,21 +82,28 @@ class Maildir(object):
         subdir_new = join(self.path, 'new')
         pid = os.getpid()
         host = socket.gethostname()
+        randmax = 0x7fffffff
         counter = 0
-        while 1:
+        while True:
             timestamp = int(time.time())
-            unique = '%d.%d.%s' % (timestamp, pid, host)
+            unique = '%d.%d.%s.%d' % (timestamp, pid, host,
+                                      random.randrange(randmax))
             filename = join(subdir_tmp, unique)
-            if not os.path.exists(filename):
+            try:
+                fd = os.open(filename, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0600)
+            except OSError:
+                # File exists
+                counter += 1
+                if counter >= 1000:
+                    raise RuntimeError("Failed to create unique file name"
+                                       " in %s, are we under a DoS attack?"
+                                       % subdir_tmp)
+                # NOTE: maildir.html (see above) says I should sleep for 2
+                time.sleep(0.1)
+            else:
                 break
-            counter += 1
-            if counter >= 1000:
-                raise RuntimeError("Failed to create unique file name in %s,"
-                                   " are we under a DoS attack?" % subdir_tmp)
-            # NOTE: maildir.html (see above) says I should sleep for 2
-            #       seconds, not 1
-            time.sleep(1)
-        return MaildirMessageWriter(filename, join(subdir_new, unique))
+        return MaildirMessageWriter(os.fdopen(fd, 'w'), filename,
+                                    join(subdir_new, unique))
 
 
 class MaildirMessageWriter(object):
@@ -102,13 +111,10 @@ class MaildirMessageWriter(object):
 
     implements(IMaildirMessageWriter)
 
-    # A hook for unit tests
-    open = open
-
-    def __init__(self, filename, new_filename):
+    def __init__(self, fd, filename, new_filename):
         self._filename = filename
         self._new_filename = new_filename
-        self._fd = self.open(filename, 'w')
+        self._fd = fd
         self._closed = False
         self._aborted = False
 

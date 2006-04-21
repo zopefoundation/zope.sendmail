@@ -90,7 +90,6 @@ class TestSMTPMailer(unittest.TestCase):
         self.assert_(self.smtp.quit)
 
 
-
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestSMTPMailer))

@@ -42,7 +42,7 @@ Email sending from Zope 3 applications works as follows:
 
 - An `IMailQueueProcessor` or `IDirectMailDelivery` actually delivers the
   messages by using a mailer (`IMailer`) component that encapsulates the
-  delivery process.  There are currently two mailers:
+  delivery process.  There currently is only one mailer:
 
     - `ISMTPMailer` sends all messages to a relay host using SMTP
 
@@ -78,8 +78,8 @@ class IMailDelivery(Interface):
 
         Returns the message ID.
 
-        You can subscribe to `IMailEvent` events for notification about problems
-        or successful delivery.
+        You can subscribe to `IMailEvent` events for notification about
+        problems or successful delivery.
 
         Messages are actually sent during transaction commit.
         """
@@ -260,3 +260,4 @@ class IMaildirMessageWriter(Interface):
 
         Calling ``abort()`` more than once is allowed.
         """
+

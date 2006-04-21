@@ -17,11 +17,13 @@ Simple implementation of the MailDelivery, Mailers and MailEvents.
 
 $Id$
 """
+
 import os.path
 from tempfile import mktemp
 from unittest import TestCase, TestSuite, makeSuite
-import transaction
 
+import transaction
+from zope.testing import doctest
 from zope.interface import implements
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import IMailer
@@ -46,6 +48,47 @@ class TestMailDataManager(TestCase):
         verifyObject(IDataManager, manager)
         self.assertEqual(manager.callable, object)
         self.assertEqual(manager.args, (1, 2))
+
+
+def print_success(*args):
+    print "message successfully sent, args: %s" % (args, )
+
+def print_abort():
+    print "message aborted"
+
+
+def doctest_successful_commit():
+    """Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+
+    Let's do a full two-phase commit.
+
+        >>> from zope.sendmail.delivery import MailDataManager
+        >>> manager = MailDataManager(print_success, ('foo', 'bar'),
+        ...                           onAbort=print_abort)
+        >>> transaction = object()
+        >>> manager.tpc_begin(transaction)
+        >>> manager.commit(transaction)
+        >>> manager.tpc_vote(transaction)
+        >>> manager.tpc_finish(transaction)
+        message successfully sent, args: ('foo', 'bar')
+
+    """
+
+
+def doctest_unsuccessful_commit():
+    """Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+
+    Let's start a two-phase commit, then abort it.
+
+        >>> from zope.sendmail.delivery import MailDataManager
+        >>> manager = MailDataManager(print_success, onAbort=print_abort)
+        >>> manager.tpc_begin(transaction)
+        >>> manager.commit(transaction)
+        >>> manager.tpc_vote(transaction)
+        >>> manager.tpc_abort(transaction)
+        message aborted
+
+    """
 
 
 class TestDirectMailDelivery(TestCase):
@@ -243,14 +286,11 @@ class TestQueueProcessorThread(TestCase):
         self.thread.log = LoggerStub()
 
     def test_parseMessage(self):
-
         hdr = ('X-Zope-From: foo@example.com\n'
                'X-Zope-To: bar@example.com, baz@example.com\n')
         msg = ('Header: value\n'
                '\n'
                'Body\n')
-
-
         f, t, m = self.thread._parseMessage(hdr + msg)
         self.assertEquals(f, 'foo@example.com')
         self.assertEquals(t, ('bar@example.com', 'baz@example.com'))
@@ -276,7 +316,6 @@ class TestQueueProcessorThread(TestCase):
                              'bar@example.com, baz@example.com'),
                             {})])
 
-
     def test_error_logging(self):
         self.thread.setMailer(BrokenMailerStub())
         self.filename = mktemp()
@@ -294,13 +333,13 @@ class TestQueueProcessorThread(TestCase):
                             {'exc_info': 1})])
 
 
-
 def test_suite():
     return TestSuite((
         makeSuite(TestMailDataManager),
         makeSuite(TestDirectMailDelivery),
         makeSuite(TestQueuedMailDelivery),
         makeSuite(TestQueueProcessorThread),
+        doctest.DocTestSuite(),
         ))
 
 if __name__ == '__main__':

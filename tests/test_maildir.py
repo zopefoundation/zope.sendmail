@@ -15,8 +15,10 @@
 
 $Id$
 """
+
 import unittest
 import stat
+import os
 
 from zope.interface.verify import verifyObject
 
@@ -42,20 +44,20 @@ class FakeOsPathModule(object):
         self.files = files
         self.dirs = dirs
 
-    _exists_never_fails = False
-
     def join(self, *args):
         return '/'.join(args)
 
     def isdir(self, dir):
         return dir in self.dirs
 
-    def exists(self, p):
-        return self._exists_never_fails or p in self.files
 
 class FakeOsModule(object):
 
     F_OK = 0
+    O_CREAT = os.O_CREAT
+    O_EXCL = os.O_EXCL
+    O_WRONLY = os.O_WRONLY
+
     _stat_mode = {
         '/path/to/maildir': stat.S_IFDIR,
         '/path/to/maildir/new': stat.S_IFDIR,
@@ -67,8 +69,8 @@ class FakeOsModule(object):
         '/path/to/maildir/tmp': stat.S_IFDIR,
         '/path/to/maildir/tmp/1': stat.S_IFREG,
         '/path/to/maildir/tmp/2': stat.S_IFREG,
-        '/path/to/maildir/tmp/1234500000.4242.myhostname': stat.S_IFREG,
-        '/path/to/maildir/tmp/1234500001.4242.myhostname': stat.S_IFREG,
+        '/path/to/maildir/tmp/1234500000.4242.myhostname.*': stat.S_IFREG,
+        '/path/to/maildir/tmp/1234500001.4242.myhostname.*': stat.S_IFREG,
         '/path/to/regularfile': stat.S_IFREG,
         '/path/to/emptydirectory': stat.S_IFDIR,
     }
@@ -84,8 +86,19 @@ class FakeOsModule(object):
     _removed_files = ()
     _renamed_files = ()
 
+    _all_files_exist = False
+
+    def __init__(self):
+        self._descriptors = {}
+
     def access(self, path, mode):
-        return path in self._stat_mode
+        if self._all_files_exist:
+            return True
+        if path in self._stat_mode:
+            return True
+        if path.rsplit('.', 1)[0] + '.*' in self._stat_mode:
+            return True
+        return False
 
     def stat(self, path):
         if path in self._stat_mode:
@@ -107,6 +120,37 @@ class FakeOsModule(object):
     def rename(self, old, new):
         self._renamed_files += ((old, new), )
 
+    def open(self, filename, flags, mode=0777):
+        if (flags & os.O_EXCL and flags & os.O_CREAT
+            and self.access(filename, 0)):
+            raise OSError('file already exists')
+        if not flags & os.O_CREAT and not self.access(filename, 0):
+            raise OSError('file not found')
+        fd = max(self._descriptors.keys() + [2]) + 1
+        self._descriptors[fd] = filename, flags, mode
+        return fd
+
+    def fdopen(self, fd, mode='r'):
+        try:
+            filename, flags, permissions = self._descriptors[fd]
+        except KeyError:
+            raise AssertionError('os.fdopen() called with an unknown'
+                                 ' file descriptor')
+        if mode == 'r':
+            assert not flags & os.O_WRONLY
+            assert not flags & os.O_RDWR
+        elif mode == 'w':
+            assert flags & os.O_WRONLY
+            assert not flags & os.O_RDWR
+        elif mode == 'r+':
+            assert not flags & os.O_WRONLY
+            assert flags & os.O_RDWR
+        else:
+            raise AssertionError("don't know how to verify if flags match"
+                                 " mode %r" % mode)
+        return FakeFile(filename, mode)
+
+
 class FakeFile(object):
 
     def __init__(self, filename, mode):
@@ -124,9 +168,6 @@ class FakeFile(object):
     def writelines(self, lines):
         self._written += ''.join(lines)
 
-def fake_open(self, filename, mode):
-    return FakeFile(filename, mode)
-
 
 class TestMaildir(unittest.TestCase):
 
@@ -139,15 +180,13 @@ class TestMaildir(unittest.TestCase):
         maildir_module.os = self.fake_os_module = FakeOsModule()
         maildir_module.time = FakeTimeModule()
         maildir_module.socket = FakeSocketModule()
-        maildir_module.MaildirMessageWriter.open = fake_open
 
     def tearDown(self):
         self.maildir_module.os = self.old_os_module
         self.maildir_module.time = self.old_time_module
         self.maildir_module.socket = self.old_socket_module
-        self.maildir_module.MaildirMessageWriter.open = open
         self.fake_os_module._stat_never_fails = False
-        self.fake_os_module.path._exists_never_fails = False
+        self.fake_os_module._all_files_exist = False
 
     def test_factory(self):
         from zope.sendmail.interfaces import IMaildirFactory, IMaildir
@@ -160,7 +199,7 @@ class TestMaildir(unittest.TestCase):
 
         # Case 2a: directory does not exist, create = False
         self.assertRaises(ValueError, Maildir, '/path/to/nosuchfolder', False)
-        
+
         # Case 2b: directory does not exist, create = True
         m = Maildir('/path/to/nosuchfolder', True)
         verifyObject(IMaildir, m)
@@ -195,13 +234,13 @@ class TestMaildir(unittest.TestCase):
         m = Maildir('/path/to/maildir')
         fd = m.newMessage()
         verifyObject(IMaildirMessageWriter, fd)
-        self.assertEquals(fd._filename,
-                          '/path/to/maildir/tmp/1234500002.4242.myhostname')
+        self.assert_(fd._filename.startswith(
+                     '/path/to/maildir/tmp/1234500002.4242.myhostname.'))
 
     def test_newMessage_never_loops(self):
         from zope.sendmail.maildir import Maildir
         from zope.sendmail.interfaces import IMaildirMessageWriter
-        self.fake_os_module.path._exists_never_fails = True
+        self.fake_os_module._all_files_exist = True
         m = Maildir('/path/to/maildir')
         self.assertRaises(RuntimeError, m.newMessage)
 
@@ -209,8 +248,8 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import MaildirMessageWriter
         filename1 = '/path/to/maildir/tmp/1234500002.4242.myhostname'
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
-        writer = MaildirMessageWriter(filename1, filename2)
-        # writer._fd should be a FakeFile instance because we stubbed open()
+        fd = FakeFile(filename1, 'w')
+        writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEquals(writer._fd._filename, filename1)
         self.assertEquals(writer._fd._mode, 'w')  # TODO or 'wb'?
         print >> writer, 'fee',
@@ -233,7 +272,8 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import MaildirMessageWriter
         filename1 = '/path/to/maildir/tmp/1234500002.4242.myhostname'
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
-        writer = MaildirMessageWriter(filename1, filename2)
+        fd = FakeFile(filename1, 'w')
+        writer = MaildirMessageWriter(fd, filename1, filename2)
         writer.commit()
         self.assertEquals(writer._fd._closed, True)
         self.assert_((filename1, filename2)

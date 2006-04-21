@@ -24,7 +24,6 @@ import threading
 import logging
 import atexit
 import time
-
 from os import unlink, getpid
 from cStringIO import StringIO
 from random import randrange
@@ -37,6 +36,7 @@ from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
 import transaction
 
+
 class MailDataManager(object):
     implements(IDataManager)
 
@@ -48,7 +48,7 @@ class MailDataManager(object):
         self.transaction_manager = transaction.manager
 
     def commit(self, transaction):
-        self.callable(*self.args)
+        pass
 
     def abort(self, transaction):
          if self.onAbort:
@@ -60,6 +60,7 @@ class MailDataManager(object):
     # No subtransaction support.
     def abort_sub(self, transaction):
         pass
+
     commit_sub = abort_sub
 
     def beforeCompletion(self, transaction):
@@ -73,7 +74,11 @@ class MailDataManager(object):
     def tpc_vote(self, transaction):
         pass
 
-    tpc_finish = tpc_abort = tpc_vote
+    def tpc_finish(self, transaction):
+        self.callable(*self.args)
+
+    tpc_abort = abort
+
 
 class AbstractMailDelivery(object):
 
@@ -131,10 +136,12 @@ class QueuedMailDelivery(AbstractMailDelivery):
         msg.write(message)
         return MailDataManager(msg.commit, onAbort=msg.abort)
 
+
 class QueueProcessorThread(threading.Thread):
     """This thread is started at configuration time from the
     `mail:queuedDelivery` directive handler.
     """
+
     log = logging.getLogger("QueueProcessorThread")
     __stopped = False
 
@@ -202,11 +209,11 @@ class QueueProcessorThread(threading.Thread):
                     if fromaddr != '' or toaddrs != ():
                         self.log.error(
                             "Error while sending mail from %s to %s.",
-                            fromaddr, ", ".join(toaddrs), exc_info=1)
+                            fromaddr, ", ".join(toaddrs), exc_info=True)
                     else:
                         self.log.error(
                             "Error while sending mail : %s ",
-                            filename, exc_info=1)
+                            filename, exc_info=True)
             else:
                 if forever:
                     time.sleep(3)
