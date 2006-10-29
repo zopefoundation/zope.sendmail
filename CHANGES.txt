@@ -1,0 +1,2 @@
+zope.sendmail Package Changelog
+===============================
