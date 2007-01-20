@@ -78,6 +78,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
                 thread.join()
 
         shutil.rmtree(self.mailbox, True)
+        super(DirectivesTest, self).tearDown()
 
     def testQueuedDelivery(self):
         delivery = zope.component.getUtility(IMailDelivery, "Mail")
