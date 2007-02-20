@@ -34,7 +34,7 @@ setup(name='zope.sendmail',
 
       namespace_packages=['zope',],
       tests_require = ['zope.testing'],
-      install_requires=['transaction',
+      install_requires=['ZODB3',
                         'zope.component',
                         'zope.configuration',
                         'zope.i18nmessageid',
