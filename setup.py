@@ -41,7 +41,7 @@ setup(name='zope.sendmail',
                         'zope.interface',
                         'zope.schema',
                         'zope.security',
-                        'zope.app.component'],
+                        'zope.app'],
       include_package_data = True,
 
       zip_safe = False,
