@@ -5,7 +5,7 @@
 
   <mail:queuedDelivery 
       name="Mail"
-      queuePath="./mailbox"
+      queuePath="path/to/tmp/mailbox"
       mailer="test.smtp"
       permission="zope.Public" />
   

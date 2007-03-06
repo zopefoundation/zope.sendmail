@@ -19,6 +19,7 @@ import os
 import shutil
 import unittest
 import threading
+import tempfile
 import time
 
 import zope.component
@@ -51,9 +52,9 @@ class Mailer(object):
 
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
-    mailbox = os.path.join(os.path.dirname(__file__), 'mailbox')
-
     def setUp(self):
+        self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
+
         super(DirectivesTest, self).setUp()
         self.testMailer = Mailer()
 
@@ -61,7 +62,12 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         gsm.registerUtility(Mailer(), IMailer, "test.smtp")
         gsm.registerUtility(self.testMailer, IMailer, "test.mailer")
 
-        self.context = xmlconfig.file("mail.zcml", zope.sendmail.tests)
+        here = os.path.dirname(__file__)
+        zcmlfile = open(os.path.join(here, "mail.zcml"), 'r')
+        zcml = zcmlfile.read()
+        zcmlfile.close()
+
+        self.context = xmlconfig.string(zcml.replace('path/to/tmp/mailbox', self.mailbox))
         self.orig_maildir = delivery.Maildir
         delivery.Maildir = MaildirStub
 
