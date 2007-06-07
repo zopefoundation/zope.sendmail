@@ -18,6 +18,7 @@ $Id$
 __docformat__ = 'restructuredtext'
 
 import os
+import errno
 import socket
 import time
 import random
@@ -91,7 +92,9 @@ class Maildir(object):
             filename = join(subdir_tmp, unique)
             try:
                 fd = os.open(filename, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0600)
-            except OSError:
+            except OSError, e:
+                if e.errno != errno.EEXIST:
+                    raise
                 # File exists
                 counter += 1
                 if counter >= 1000:
@@ -115,7 +118,7 @@ class MaildirMessageWriter(object):
         self._filename = filename
         self._new_filename = new_filename
         self._fd = fd
-        self._closed = False
+        self._finished = False
         self._aborted = False
 
     def write(self, data):
@@ -124,22 +127,28 @@ class MaildirMessageWriter(object):
     def writelines(self, lines):
         self._fd.writelines(lines)
 
+    def close(self):
+        self._fd.close()
+
     def commit(self):
-        if self._closed and self._aborted:
+        if self._aborted:
             raise RuntimeError('Cannot commit, message already aborted')
-        elif not self._closed:
-            self._closed = True
-            self._aborted = False
+        elif not self._finished:
+            self._finished = True
             self._fd.close()
             os.rename(self._filename, self._new_filename)
             # NOTE: the same maildir.html says it should be a link, followed by
             #       unlink.  But Win32 does not necessarily have hardlinks!
 
     def abort(self):
-        if not self._closed:
-            self._closed = True
+        # XXX mgedmin: I think it is dangerous to have an abort() that does
+        # nothing when commit() already succeeded.  But the tests currently
+        # test that expectation.
+        if not self._finished:
+            self._finished = True
             self._aborted = True
             self._fd.close()
             os.unlink(self._filename)
 
-    # should there be a __del__ that does abort()?
+    # XXX: should there be a __del__ that calls abort()?
+

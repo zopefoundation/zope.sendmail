@@ -19,6 +19,7 @@ $Id$
 import unittest
 import stat
 import os
+import errno
 
 from zope.interface.verify import verifyObject
 
@@ -123,7 +124,7 @@ class FakeOsModule(object):
     def open(self, filename, flags, mode=0777):
         if (flags & os.O_EXCL and flags & os.O_CREAT
             and self.access(filename, 0)):
-            raise OSError('file already exists')
+            raise OSError(errno.EEXIST, 'file already exists')
         if not flags & os.O_CREAT and not self.access(filename, 0):
             raise OSError('file not found')
         fd = max(self._descriptors.keys() + [2]) + 1

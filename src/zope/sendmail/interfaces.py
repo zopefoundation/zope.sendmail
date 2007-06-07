@@ -243,6 +243,15 @@ class IMaildirMessageWriter(Interface):
         any line separators.
         """
 
+    def close():
+        """Closes the message file.
+
+        No further writes are allowed.  You can call ``close()`` before calling
+        ``commit()`` or ``abort()`` to avoid having too many open files.
+
+        Calling ``close()`` more than once is allowed.
+        """
+
     def commit():
         """Commits the new message using the `Maildir` protocol.
 

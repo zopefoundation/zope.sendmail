@@ -134,6 +134,7 @@ class QueuedMailDelivery(AbstractMailDelivery):
         msg.write('X-Zope-From: %s\n' % fromaddr)
         msg.write('X-Zope-To: %s\n' % ", ".join(toaddrs))
         msg.write(message)
+        msg.close()
         return MailDataManager(msg.commit, onAbort=msg.abort)
 
 

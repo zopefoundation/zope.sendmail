@@ -147,18 +147,32 @@ class MaildirWriterStub(object):
     data = ''
     commited_messages = []  # this list is shared among all instances
     aborted_messages = []   # this one too
+    _closed = False
 
     def write(self, str):
+        if self._closed:
+            raise AssertionError('already closed')
         self.data += str
 
     def writelines(self, seq):
+        if self._closed:
+            raise AssertionError('already closed')
         self.data += ''.join(seq)
 
+    def close(self):
+        self._closed = True
+
     def commit(self):
+        if not self._closed:
+            raise AssertionError('for this test we want the message explicitly'
+                                 ' closed before it is committed')
         self._commited = True
         self.commited_messages.append(self.data)
 
     def abort(self):
+        if not self._closed:
+            raise AssertionError('for this test we want the message explicitly'
+                                 ' closed before it is committed')
         self._aborted = True
         self.aborted_messages.append(self.data)
 
