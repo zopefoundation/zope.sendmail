@@ -54,7 +54,11 @@ class SMTPMailer(object):
                                 '(code=%s, response=%s)' % (code, response))
 
         # encryption support
-        if connection.has_extn('starttls') and have_ssl:
+        have_tls =  connection.has_extn('starttls') 
+        if not have_tls and self.force_tls:
+            raise MailHostError('TLS is not available but TLS is required')
+
+        if have_tls and have_ssl and not self.no_tls: 
             connection.starttls()
             connection.ehlo()
 
