@@ -36,11 +36,13 @@ class SMTPMailer(object):
     smtp = SMTP
 
     def __init__(self, hostname='localhost', port=25,
-                 username=None, password=None):
+                 username=None, password=None, no_tls=False, force_tls=False):
         self.hostname = hostname
         self.port = port
         self.username = username
         self.password = password
+        self.force_tls = force_tls
+        self.no_tls = no_tls
 
     def send(self, fromaddr, toaddrs, message):
         connection = self.smtp(self.hostname, str(self.port))
