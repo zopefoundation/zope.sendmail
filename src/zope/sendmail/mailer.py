@@ -19,11 +19,15 @@ $Id$
 """
 __docformat__ = 'restructuredtext'
 
+import socket
 from smtplib import SMTP
 
 from zope.interface import implements
 from zope.sendmail.interfaces import ISMTPMailer
 
+from Products.MailHost.MailHost import MailHostError
+
+have_ssl = hasattr(socket, 'ssl')
 
 class SMTPMailer(object):
 
@@ -40,7 +44,24 @@ class SMTPMailer(object):
 
     def send(self, fromaddr, toaddrs, message):
         connection = self.smtp(self.hostname, str(self.port))
-        if self.username is not None and self.password is not None:
-            connection.login(self.username, self.password)
+
+        # send EHLO
+        code, response = connection.helo()
+        if code < 200 or code >300:
+            raise MailHostError('Error sending EHLO to the SMTP server '
+                                '(code=%s, response=%s)' % (code, response))
+
+        # encryption support
+        if connection.has_extn('starttls') and have_ssl:
+            connection.starttls()
+            connection.ehlo()
+
+        if connection.does_esmtp: 
+            if self.username is not None and self.password is not None:
+                connection.login(self.username, self.password)
+        elif self.username:
+            raise MailHostError('Mailhost does not support ESMTP but a username '
+                                'is configured')
+
         connection.sendmail(fromaddr, toaddrs, message)
         connection.quit()
