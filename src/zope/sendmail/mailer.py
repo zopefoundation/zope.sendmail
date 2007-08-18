@@ -46,7 +46,7 @@ class SMTPMailer(object):
         connection = self.smtp(self.hostname, str(self.port))
 
         # send EHLO
-        code, response = connection.helo()
+        code, response = connection.ehlo()
         if code < 200 or code >300:
             raise MailHostError('Error sending EHLO to the SMTP server '
                                 '(code=%s, response=%s)' % (code, response))
