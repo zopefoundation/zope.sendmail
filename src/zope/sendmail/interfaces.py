@@ -55,7 +55,7 @@ $Id$
 __docformat__ = 'restructuredtext'
 
 from zope.interface import Interface, Attribute
-from zope.schema import Object, TextLine, Int, Password, BytesLine
+from zope.schema import Object, TextLine, Int, Password, BytesLine, Bool
 
 from zope.i18nmessageid import MessageFactory
 _ = MessageFactory('zope')
@@ -164,6 +164,14 @@ class ISMTPMailer(IMailer):
     password = Password(
         title=_(u"Password"),
         description=_(u"Password used for optional SMTP authentication."))
+
+    no_tls = Bool(
+        title=_(u"No TLS"),
+        description=_(u"Never use TLS for sending email."))
+
+    force_tls = Bool(
+        title=_(u"Force TLS"),
+        description=_(u"Use TLS always for sending email."))
 
 
 class IMailEvent(Interface):

@@ -19,11 +19,13 @@ $Id$
 """
 __docformat__ = 'restructuredtext'
 
+import socket
 from smtplib import SMTP
 
 from zope.interface import implements
 from zope.sendmail.interfaces import ISMTPMailer
 
+have_ssl = hasattr(socket, 'ssl')
 
 class SMTPMailer(object):
 
@@ -32,15 +34,38 @@ class SMTPMailer(object):
     smtp = SMTP
 
     def __init__(self, hostname='localhost', port=25,
-                 username=None, password=None):
+                 username=None, password=None, no_tls=False, force_tls=False):
         self.hostname = hostname
         self.port = port
         self.username = username
         self.password = password
+        self.force_tls = force_tls
+        self.no_tls = no_tls
 
     def send(self, fromaddr, toaddrs, message):
         connection = self.smtp(self.hostname, str(self.port))
-        if self.username is not None and self.password is not None:
-            connection.login(self.username, self.password)
+
+        # send EHLO
+        code, response = connection.ehlo()
+        if code < 200 or code >300:
+            raise RuntimeError('Error sending EHLO to the SMTP server '
+                                '(code=%s, response=%s)' % (code, response))
+
+        # encryption support
+        have_tls =  connection.has_extn('starttls') 
+        if not have_tls and self.force_tls:
+            raise RuntimeError('TLS is not available but TLS is required')
+
+        if have_tls and have_ssl and not self.no_tls: 
+            connection.starttls()
+            connection.ehlo()
+
+        if connection.does_esmtp: 
+            if self.username is not None and self.password is not None:
+                connection.login(self.username, self.password)
+        elif self.username:
+            raise RuntimeError('Mailhost does not support ESMTP but a username '
+                                'is configured')
+
         connection.sendmail(fromaddr, toaddrs, message)
         connection.quit()
