@@ -15,19 +15,16 @@
 
 $Id$
 """
-
-import os
-
 from setuptools import setup, find_packages
 
 setup(name='zope.sendmail',
-      version = '3.4.0b1',
-      url='http://svn.zope.org/zope.sendmail',
+      version = '3.5.0a1',
+      url='http://cheeseshop.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
       author='Zope Corporation and Contributors',
       author_email='zope3-dev@zope.org',
-      long_description="A package for email sending from Zope 3 applications.",
+      long_description=open('README.txt').read(),
 
       packages=find_packages('src'),
 	  package_dir = {'': 'src'},
@@ -45,6 +42,5 @@ setup(name='zope.sendmail',
                         'zope.app.component',
                        ],
       include_package_data = True,
-
       zip_safe = False,
       )
