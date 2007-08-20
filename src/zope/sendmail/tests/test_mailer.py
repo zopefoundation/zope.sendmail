@@ -49,6 +49,18 @@ class TestSMTPMailer(unittest.TestCase):
             def quit(self):
                 self.quit = True
 
+            def has_extn(self, ext):
+                return True
+
+            def ehlo(self):
+                return (200, 'Hello, I am your stupid MTA mock')
+
+            def starttls(self):
+                pass
+
+            def does_esmtp(self):
+                return True
+
         if port is None:
             self.mailer = SMTPMailer()
         else:
