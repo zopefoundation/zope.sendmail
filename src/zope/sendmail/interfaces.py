@@ -55,7 +55,7 @@ $Id$
 __docformat__ = 'restructuredtext'
 
 from zope.interface import Interface, Attribute
-from zope.schema import Object, TextLine, Int, Password, BytesLine, Bool
+from zope.schema import TextLine, Int, Password, Bool
 
 from zope.i18nmessageid import MessageFactory
 _ = MessageFactory('zope')

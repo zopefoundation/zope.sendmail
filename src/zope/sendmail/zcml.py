@@ -22,7 +22,7 @@ from zope.component.zcml import handler, proxify, PublicPermission
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
-from zope.schema import TextLine, ASCII, BytesLine, Int
+from zope.schema import TextLine, BytesLine, Int
 from zope.security.checker import InterfaceChecker, CheckerPublic
 from zope.security.zcml import Permission
 
