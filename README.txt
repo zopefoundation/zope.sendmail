@@ -48,7 +48,8 @@ Changes
 3.5.0a1 (unreleased)
 --------------------
 
-...
+QueueProcessorThread now accepts an optional parameter 'interval' for
+defining how often to processes the mail queue (default is 3 second)
 
 3.4.0 (2007-08-20)
 --------------------
