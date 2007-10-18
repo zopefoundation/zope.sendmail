@@ -188,16 +188,16 @@ class QueuedMailDelivery(AbstractMailDelivery):
 #                            V
 #                 ( unlink message file )---------+
 #                            |                    |
-#                            | file unlinked      | file disappeared
+#                            | file unlinked      | file no longer exists
 #                            |                    |
 #                            |  +-----------------+
 #                            |  |
 #                            |  V
-#                  ( unlink tmp file )-------------+
-#                            |                     |
-#                            | file unlinked       | file disappeared
-#                            V                     |
-#                  ( message delivered )<----------+
+#                  ( unlink tmp file )------------+
+#                            |                    |
+#                            | file unlinked      | file no longer exists
+#                            V                    |
+#                  ( message delivered )<---------+
 
 class QueueProcessorThread(threading.Thread):
     """This thread is started at configuration time from the
