@@ -51,6 +51,10 @@ Changes
 QueueProcessorThread now accepts an optional parameter 'interval' for
 defining how often to processes the mail queue (default is 3 second)
 
+Several QueueProcessorThreads (either in the same process, or multiple
+processes) can now deliver messages from a single maildir without duplicates
+being sent.
+
 3.4.0 (2007-08-20)
 --------------------
 
