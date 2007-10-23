@@ -255,6 +255,10 @@ class QueueProcessorThread(threading.Thread):
         atexit.register(self.stop)
         while not self.__stopped:
             for filename in self.maildir:
+                # if we are asked to stop while sending messages, do so
+                if self.__stopped:
+                    break
+
                 fromaddr = ''
                 toaddrs = ()
                 head, tail = os.path.split(filename)
