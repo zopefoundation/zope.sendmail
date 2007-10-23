@@ -289,7 +289,10 @@ class QueueProcessorThread(threading.Thread):
                     if age is not None:
                         try:
                             if age > MAX_SEND_TIME:
-                                # the tmp file is "too old" remove it
+                                # the tmp file is "too old"; this suggests
+                                # that during an attemt to send it, the
+                                # process died; remove the tmp file so we
+                                # can try again
                                 os.unlink(tmp_filename)
                             else:
                                 # the tmp file is "new", so someone else may
@@ -299,9 +302,9 @@ class QueueProcessorThread(threading.Thread):
                             # old, so it was unlinked
                         except OSError, e:
                             if e.errno == 2: # file does not exist
-                                # it looks like someone else removed the tmp file,
-                                # that's fine, we'll try to deliver the message
-                                # again later
+                                # it looks like someone else removed the tmp
+                                # file, that's fine, we'll try to deliver the
+                                # message again later
                                 continue
 
                     # now we know that the tmp file doesn't exist, we need to
