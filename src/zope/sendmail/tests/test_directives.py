@@ -67,7 +67,8 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         zcml = zcmlfile.read()
         zcmlfile.close()
 
-        self.context = xmlconfig.string(zcml.replace('path/to/tmp/mailbox', self.mailbox))
+        self.context = xmlconfig.string(
+            zcml.replace('path/to/tmp/mailbox', self.mailbox))
         self.orig_maildir = delivery.Maildir
         delivery.Maildir = MaildirStub
 
