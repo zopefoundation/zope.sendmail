@@ -45,7 +45,7 @@ mailer.  If mail delivery fails, no exceptions are raised, but an
 Changes
 =======
 
-3.5.0a1 (unreleased)
+3.5.0a1 (2007-10-23)
 --------------------
 
 QueueProcessorThread now accepts an optional parameter 'interval' for
