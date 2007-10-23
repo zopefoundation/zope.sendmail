@@ -50,6 +50,16 @@ Changes
 
 TBD
 
+3.5.0a2 (2007-10-23)
+--------------------
+
+Cleaned up ``does_esmtp`` in faux SMTP connection classes provided by
+the tests.
+
+If the QueueProcessorThread is asked to stop while sending messages, do so
+after sending the current message; previously if there were many, many
+messages to send, the thread could stick around for quite a while.
+
 3.5.0a1 (2007-10-23)
 --------------------
 
