@@ -45,11 +45,6 @@ mailer.  If mail delivery fails, no exceptions are raised, but an
 Changes
 =======
 
-3.5.0b1 (unreleased)
---------------------
-
-TBD
-
 3.5.0a2 (2007-10-23)
 --------------------
 
