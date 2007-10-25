@@ -52,14 +52,11 @@ an IMailDelivery utility in your site.zcml with a configuration directive::
     </configure>
 
 The ``mail:queuedDelivery`` directive stores every email in a queue (a standard
-Maildir folder on the file system in a given directory) and sends them only on
-successful transaction commits.  I'll explain the ``mailer`` parameter later.
-
-There's an alternative directive, ``mail:directDelivery``, that ignores
-transactions and tries to send the emails directly.  It is useful for (manual)
-testing, but don't use it in production if you don't want to send multiple
-copies of the same emails to your customers whenever ZODB retries a transaction
-after a ConflictError.
+Maildir folder on the file system in a given directory) and sends them from a
+background thread.  There's an alternative directive, ``mail:directDelivery``,
+that sends them from the same thread.  This may slow down transaction commits
+(especially if the SMTP server is slow to respond) and increase the loading
+time of web pages.
 
 
 Mailers
