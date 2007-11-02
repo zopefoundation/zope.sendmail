@@ -66,7 +66,6 @@ class SMTPMailer(object):
             if self.username is not None and self.password is not None:
                 connection.login(self.username, self.password)
         elif self.username:
-            import pdb;pdb.set_trace()
             raise RuntimeError('Mailhost does not support ESMTP but a username '
                                 'is configured')
 
