@@ -262,7 +262,7 @@ class QueueProcessorThread(threading.Thread):
                 fromaddr = ''
                 toaddrs = ()
                 head, tail = os.path.split(filename)
-                tmp_filename = os.path.join(head, 'sending-' + tail)
+                tmp_filename = os.path.join(head, '.sending-' + tail)
                 try:
                     # perform a series of operations in an attempt to ensure
                     # that no two threads/processes send this message

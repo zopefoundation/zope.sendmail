@@ -83,8 +83,8 @@ different SMTP server, define your own utility like this::
             name="my-app.smtp"
             hostname="mail.my-app.com"
             port="25"
-            /> 
-            
+            />
+
         <mail:queuedDelivery
             name="my-app.mailer"
             permission="zope.Public"
@@ -129,4 +129,3 @@ Problems with zope.sendmail
 
 * The IMailSentEvent and IMailErrorEvent events aren't used and can't be used
   (you don't want to send emails during the commit phase).
-

@@ -16,24 +16,24 @@
 $Id$
 """
 
-import unittest
 from StringIO import StringIO
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import ISMTPMailer
+from zope.sendmail.mailer import SMTPMailer
+import socket
+import unittest
 
 
 class TestSMTPMailer(unittest.TestCase):
 
     def setUp(self, port=None):
-        from zope.sendmail.mailer import SMTPMailer
-
+        global SMTP
         class SMTP(object):
 
             def __init__(myself, h, p):
                 myself.hostname = h
                 myself.port = p
                 if type(p) == type(u""):
-                    import socket
                     raise socket.error("Int or String expected")
                 self.smtp = myself
 
@@ -58,6 +58,7 @@ class TestSMTPMailer(unittest.TestCase):
 
             def starttls(self):
                 pass
+
 
         if port is None:
             self.mailer = SMTPMailer()
@@ -100,9 +101,42 @@ class TestSMTPMailer(unittest.TestCase):
         self.assert_(self.smtp.quit)
 
 
+class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
+
+    def setUp(self, port=None):
+
+        class SMTPWithNoEHLO(SMTP):
+            does_esmtp = False
+
+            def __init__(myself, h, p):
+                myself.hostname = h
+                myself.port = p
+                if type(p) == type(u""):
+                    raise socket.error("Int or String expected")
+                self.smtp = myself
+
+            def helo(self):
+                return (200, 'Hello, I am your stupid MTA mock')
+
+            def ehlo(self):
+                return (502, 'I don\'t understand EHLO')
+
+
+        if port is None:
+            self.mailer = SMTPMailer()
+        else:
+            self.mailer = SMTPMailer(u'localhost', port)
+        self.mailer.smtp = SMTPWithNoEHLO
+
+    def test_send_auth(self):
+        # This test requires ESMTP, which we're intentionally not enabling
+        # here, so pass.
+        pass
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestSMTPMailer))
+    suite.addTest(unittest.makeSuite(TestSMTPMailerWithNoEHLO))
     return suite
 
 

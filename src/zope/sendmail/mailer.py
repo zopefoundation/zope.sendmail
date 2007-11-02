@@ -47,23 +47,26 @@ class SMTPMailer(object):
 
         # send EHLO
         code, response = connection.ehlo()
-        if code < 200 or code >300:
-            raise RuntimeError('Error sending EHLO to the SMTP server '
-                                '(code=%s, response=%s)' % (code, response))
+        if code < 200 or code >= 300:
+            code, response = connection.helo()
+            if code < 200 or code >= 300:
+                raise RuntimeError('Error sending HELO to the SMTP server '
+                                   '(code=%s, response=%s)' % (code, response))
 
         # encryption support
-        have_tls =  connection.has_extn('starttls') 
+        have_tls =  connection.has_extn('starttls')
         if not have_tls and self.force_tls:
             raise RuntimeError('TLS is not available but TLS is required')
 
-        if have_tls and have_ssl and not self.no_tls: 
+        if have_tls and have_ssl and not self.no_tls:
             connection.starttls()
             connection.ehlo()
 
-        if connection.does_esmtp: 
+        if connection.does_esmtp:
             if self.username is not None and self.password is not None:
                 connection.login(self.username, self.password)
         elif self.username:
+            import pdb;pdb.set_trace()
             raise RuntimeError('Mailhost does not support ESMTP but a username '
                                 'is configured')
 
