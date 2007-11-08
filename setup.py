@@ -27,7 +27,7 @@ setup(name='zope.sendmail',
       long_description=open('README.txt').read(),
 
       packages=find_packages('src'),
-	  package_dir = {'': 'src'},
+      package_dir = {'': 'src'},
 
       namespace_packages=['zope',],
       tests_require = ['zope.testing'],
