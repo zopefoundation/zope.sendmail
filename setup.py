@@ -18,7 +18,7 @@ $Id$
 from setuptools import setup, find_packages
 
 setup(name='zope.sendmail',
-      version = '3.5.0b2dev',
+      version = '3.5.0b2',
       url='http://cheeseshop.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
