@@ -24,6 +24,7 @@ import logging
 import os
 import os.path
 import rfc822
+import smtplib
 import stat
 import threading
 import time
@@ -263,13 +264,14 @@ class QueueProcessorThread(threading.Thread):
                 toaddrs = ()
                 head, tail = os.path.split(filename)
                 tmp_filename = os.path.join(head, '.sending-' + tail)
+                rejected_filename = os.path.join(head, '.rejected-' + tail)
                 try:
                     # perform a series of operations in an attempt to ensure
                     # that no two threads/processes send this message
                     # simultaneously as well as attempting to not generate
                     # spurious failure messages in the log; a diagram that
-                    # represents these operations is included in
-                    # send-mail-states.txt
+                    # represents these operations is included in a
+                    # comment above this class
                     try:
                         # find the age of the tmp file (if it exists)
                         age = None
@@ -336,7 +338,19 @@ class QueueProcessorThread(threading.Thread):
                     message = file.read()
                     file.close()
                     fromaddr, toaddrs, message = self._parseMessage(message)
-                    self.mailer.send(fromaddr, toaddrs, message)
+                    try:
+                        self.mailer.send(fromaddr, toaddrs, message)
+                    except smtplib.SMTPResponseException, e:
+                        if 500 <= e.smtp_code <= 599:
+                            # permanent error, ditch the message
+                            self.log.error(
+                                "Discarding email from %s to %s due to"
+                                " a permanent error: %s",
+                                fromaddr, ", ".join(toaddrs), str(e))
+                            os.link(filename, rejected_filename)
+                        else:
+                            # Log an error and retry later
+                            raise
 
                     try:
                         os.unlink(filename)

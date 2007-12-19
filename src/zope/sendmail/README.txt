@@ -123,9 +123,5 @@ Problems with zope.sendmail
 
 * The configuration should be done in zope.conf, not in ZCML.
 
-* If the SMTP server rejects a message (for example, when the sender or
-  recipient address is malformed), that email stays in the queue forever
-  (https://bugs.launchpad.net/zope3/+bug/157104).
-
 * The IMailSentEvent and IMailErrorEvent events aren't used and can't be used
   (you don't want to send emails during the commit phase).

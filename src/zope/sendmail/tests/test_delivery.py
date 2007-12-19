@@ -19,7 +19,9 @@ $Id$
 """
 
 import os.path
-from tempfile import mktemp
+import shutil
+import smtplib
+from tempfile import mkdtemp
 from unittest import TestCase, TestSuite, makeSuite
 
 import transaction
@@ -193,6 +195,7 @@ class MaildirStub(object):
         self.msgs.append(m)
         return m
 
+
 class LoggerStub(object):
 
     def __init__(self):
@@ -208,8 +211,10 @@ class LoggerStub(object):
     def info(self, msg, *args, **kwargs):
         self.infos.append((msg, args, kwargs))
 
+
 class BizzarreMailError(IOError):
     pass
+
 
 class BrokenMailerStub(object):
 
@@ -219,6 +224,17 @@ class BrokenMailerStub(object):
 
     def send(self, fromaddr, toaddrs, message):
         raise BizzarreMailError("bad things happened while sending mail")
+
+
+class SMTPResponseExceptionMailerStub(object):
+
+    implements(IMailer)
+    def __init__(self, code):
+        self.code = code
+
+    def send(self, fromaddr, toaddrs, message):
+        raise smtplib.SMTPResponseException(self.code,  'Serious Error')
+
 
 class TestQueuedMailDelivery(TestCase):
 
@@ -298,6 +314,10 @@ class TestQueueProcessorThread(TestCase):
         self.mailer = MailerStub()
         self.thread.setMailer(self.mailer)
         self.thread.log = LoggerStub()
+        self.dir = mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.dir)
 
     def test_parseMessage(self):
         hdr = ('X-Zope-From: foo@example.com\n'
@@ -311,7 +331,7 @@ class TestQueueProcessorThread(TestCase):
         self.assertEquals(m, msg)
 
     def test_deliveration(self):
-        self.filename = mktemp()
+        self.filename = os.path.join(self.dir, 'message')
         temp = open(self.filename, "w+b")
         temp.write('X-Zope-From: foo@example.com\n'
                    'X-Zope-To: bar@example.com, baz@example.com\n'
@@ -332,7 +352,7 @@ class TestQueueProcessorThread(TestCase):
 
     def test_error_logging(self):
         self.thread.setMailer(BrokenMailerStub())
-        self.filename = mktemp()
+        self.filename = os.path.join(self.dir, 'message')
         temp = open(self.filename, "w+b")
         temp.write('X-Zope-From: foo@example.com\n'
                    'X-Zope-To: bar@example.com, baz@example.com\n'
@@ -345,6 +365,49 @@ class TestQueueProcessorThread(TestCase):
                             ('foo@example.com',
                              'bar@example.com, baz@example.com'),
                             {'exc_info': 1})])
+
+    def test_smtp_response_error_transient(self):
+        # Test a transient error
+        self.thread.setMailer(SMTPResponseExceptionMailerStub(451))
+        self.filename = os.path.join(self.dir, 'message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        self.thread.run(forever=False)
+
+        # File must remail were it was, so it will be retried
+        self.failUnless(os.path.exists(self.filename))
+        self.assertEquals(self.thread.log.errors,
+                          [('Error while sending mail from %s to %s.',
+                            ('foo@example.com',
+                             'bar@example.com, baz@example.com'),
+                            {'exc_info': 1})])
+
+    def test_smtp_response_error_permanent(self):
+        # Test a permanent error
+        self.thread.setMailer(SMTPResponseExceptionMailerStub(550))
+        self.filename = os.path.join(self.dir, 'message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        self.thread.run(forever=False)
+
+        # File must be moved aside
+        self.failIf(os.path.exists(self.filename))
+        self.failUnless(os.path.exists(os.path.join(self.dir,
+                                                    '.rejected-message')))
+        self.assertEquals(self.thread.log.errors,
+                          [('Discarding email from %s to %s due to a '
+                            'permanent error: %s',
+                            ('foo@example.com',
+                             'bar@example.com, baz@example.com',
+                             "(550, 'Serious Error')"), {})])
 
 
 def test_suite():
