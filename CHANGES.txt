@@ -5,6 +5,7 @@ Change history
 3.5.0b1 (unreleased)
 --------------------
 
+- Added README.txt
 - Can now talk to servers that don't implement EHLO
 - Fix bug that caused files with very long names to be created
 - Fix for https://bugs.launchpad.net/zope3/+bug/157104: move aside mail that's
@@ -35,7 +36,9 @@ Change history
 3.4.0 (2007-08-20)
 --------------------
 
-No changes since 3.4.0a1.
+- Bugfix: Don't keep open files around for every email message
+  to be sent on transaction commit.  People who try to send many emails
+  in a single transaction now will not run out of file descriptors.
 
 
 3.4.0a1 (2007-04-22)
