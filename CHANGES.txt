@@ -1,3 +1,7 @@
+Change history
+~~~~~~~~~~~~~~
+
+
 3.5.0b1 (unreleased)
 --------------------
 
@@ -12,18 +16,18 @@
 
 - Cleaned up ``does_esmtp`` in faux SMTP connection classes provided by the
   tests.
-- If the QueueProcessorThread is asked to stop while sending messages, do so
-  after sending the current message; previously if there were many, many
+- If the ``QueueProcessorThread`` is asked to stop while sending messages, do
+  so after sending the current message; previously if there were many, many
   messages to send, the thread could stick around for quite a while.
 
 
 3.5.0a1 (2007-10-23)
 --------------------
 
-- QueueProcessorThread now accepts an optional parameter 'interval' for
-  defining how often to processes the mail queue (default is 3 second)
+- ``QueueProcessorThread`` now accepts an optional parameter *interval* for
+  defining how often to processes the mail queue (default is 3 seconds)
 
-- Several QueueProcessorThreads (either in the same process, or multiple
+- Several ``QueueProcessorThreads`` (either in the same process, or multiple
   processes) can now deliver messages from a single maildir without duplicates
   being sent.
 
@@ -37,5 +41,5 @@ No changes since 3.4.0a1.
 3.4.0a1 (2007-04-22)
 --------------------
 
-Initial release as a separate project, corresponds to zope.sendmail
+Initial release as a separate project, corresponds to ``zope.sendmail``
 from Zope 3.4.0a1.

@@ -1,3 +1,7 @@
+=============
+zope.sendmail
+=============
+
 zope.sendmail is a package for email sending from Zope 3 applications.
 Email sending from Zope 3 applications works as follows:
 

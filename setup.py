@@ -17,6 +17,7 @@ $Id$
 """
 from setuptools import setup, find_packages
 
+
 setup(name='zope.sendmail',
       version = '3.5.0b2dev',
       url='http://cheeseshop.python.org/pypi/zope.sendmail',
@@ -24,7 +25,10 @@ setup(name='zope.sendmail',
       description='Zope sendmail',
       author='Zope Corporation and Contributors',
       author_email='zope3-dev@zope.org',
-      long_description=open('README.txt').read(),
+      long_description='\n\n'.join([
+          open('README.txt').read(),
+          open('CHANGES.txt').read(),
+          ]),
 
       packages=find_packages('src'),
       package_dir = {'': 'src'},
