@@ -76,8 +76,8 @@ class FakeOsModule(object):
         '/path/to/emptydirectory': stat.S_IFDIR,
     }
     _listdir = {
-        '/path/to/maildir/new': ['1', '2', '.svn'],
-        '/path/to/maildir/cur': ['2', '1', '.tmp'],
+        '/path/to/maildir/new': ['1', '2', '.svn', '.sending-2'],
+        '/path/to/maildir/cur': ['2', '1', '.tmp', '.sending-1'],
         '/path/to/maildir/tmp': ['1', '2', '.ignore'],
     }
 
@@ -228,6 +228,15 @@ class TestMaildir(unittest.TestCase):
                                      '/path/to/maildir/cur/2',
                                      '/path/to/maildir/new/1',
                                      '/path/to/maildir/new/2'])
+
+    def test_cleanLockLinks(self):
+        from zope.sendmail.maildir import Maildir
+        filename1 = '/path/to/maildir/new/.sending-2'
+        filename2 = '/path/to/maildir/cur/.sending-1'
+        m = Maildir('/path/to/maildir')
+        m._cleanLockLinks()
+        self.assert_(filename1 in  self.fake_os_module._removed_files)
+        self.assert_(filename2 in  self.fake_os_module._removed_files)
 
     def test_newMessage(self):
         from zope.sendmail.maildir import Maildir

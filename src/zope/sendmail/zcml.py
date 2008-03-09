@@ -22,7 +22,7 @@ from zope.component.zcml import handler, proxify, PublicPermission
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
-from zope.schema import TextLine, BytesLine, Int
+from zope.schema import TextLine, BytesLine, Int, Bool
 from zope.security.checker import InterfaceChecker, CheckerPublic
 from zope.security.zcml import Permission
 
@@ -70,7 +70,35 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
         description=u"Defines the path for the queue directory.",
         required=True)
 
-def queuedDelivery(_context, permission, queuePath, mailer, name="Mail"):
+    pollingInterval = Int(
+        title=u'Polling Interval',
+        description=u'Defines the polling interval for queue processing in'
+                    ' milliseconds',
+        default=3000,
+        required=False)
+
+    retryInterval = Int(
+        title=u'Retry Interval',
+        description=u'Defines the retry interval for queue processing in'
+                    ' the event of a temporary error in seconds',
+        default=300,
+        required=False)
+
+    cleanLockLinks = Bool(
+        title=u'Clean Lock Links',
+        description=u'Whether or not to clean up .sending-* lock links in the'
+                    ' queue on processing thread start',
+        default=False,
+        required=False)
+
+def queuedDelivery(_context,
+                   permission,
+                   queuePath,
+                   mailer,
+                   pollingInterval=3000,
+                   retryInterval=300,
+                   cleanLockLinks=False,
+                   name="Mail"):
 
     def createQueuedDelivery():
         delivery = QueuedMailDelivery(queuePath)
@@ -80,17 +108,19 @@ def queuedDelivery(_context, permission, queuePath, mailer, name="Mail"):
 
         mailerObject = queryUtility(IMailer, mailer)
         if mailerObject is None:
-            raise ConfigurationError("Mailer %r is not defined" %mailer)
+            raise ConfigurationError("Mailer %r is not defined" % mailer)
 
-        thread = QueueProcessorThread()
+        thread = QueueProcessorThread(interval=pollingInterval/1000,
+                                      retry_interval=retryInterval,
+                                      clean_lock_links=cleanLockLinks)
         thread.setMailer(mailerObject)
         thread.setQueuePath(queuePath)
         thread.start()
 
     _context.action(
-            discriminator = ('delivery', name),
-            callable = createQueuedDelivery,
-            args = () )
+            discriminator=('delivery', name),
+            callable=createQueuedDelivery,
+            args=() )
 
 class IDirectDeliveryDirective(IDeliveryDirective):
     """This directive creates and registers a global direct mail utility. It

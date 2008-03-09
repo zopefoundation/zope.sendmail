@@ -24,7 +24,6 @@ import logging
 import os
 import os.path
 import rfc822
-import smtplib
 import stat
 import threading
 import time
@@ -33,8 +32,12 @@ from random import randrange
 from time import strftime
 from socket import gethostname
 
-from zope.interface import implements
+from zope.interface import implements, providedBy
+from zope.interface.exceptions import DoesNotImplement
 from zope.sendmail.interfaces import IDirectMailDelivery, IQueuedMailDelivery
+from zope.sendmail.interfaces import ISMTPMailer, IMailer
+from zope.sendmail.interfaces import MailerTemporaryFailureException
+from zope.sendmail.interfaces import MailerPermanentFailureException
 from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
 import transaction
@@ -45,6 +48,15 @@ import transaction
 # very large files or using very slow mail servers could result in duplicate
 # messages sent.
 MAX_SEND_TIME = 60*60*3
+
+# Prefixes for messages being processed in the queue
+# This one is the lock link prefix for when a message
+# is being sent - also edit this in maildir.py if changed...
+SENDING_MSG_LOCK_PREFIX = '.sending-'
+# This is the rejected message prefix
+REJECTED_MSG_PREFIX = '.rejected-'
+
+
 
 class MailDataManager(object):
     implements(IDataManager)
@@ -124,7 +136,7 @@ class DirectMailDelivery(AbstractMailDelivery):
 
     def createDataManager(self, fromaddr, toaddrs, message):
         return MailDataManager(self.mailer.send,
-                               args=(fromaddr, toaddrs, message))
+                               args=(fromaddr, toaddrs, message, 'direct_delivery'))
 
 
 class QueuedMailDelivery(AbstractMailDelivery):
@@ -209,9 +221,15 @@ class QueueProcessorThread(threading.Thread):
     __stopped = False
     interval = 3.0   # process queue every X second
 
-    def __init__(self, interval=3.0):
+    def __init__(self, 
+                 interval=3.0, 
+                 retry_interval=300.0, 
+                 clean_lock_links=False):
         threading.Thread.__init__(self)
         self.interval = interval
+        self.retry_interval = retry_interval
+        self.clean_lock_links = clean_lock_links
+        self.test_results = {}
 
     def setMaildir(self, maildir):
         """Set the maildir.
@@ -223,6 +241,8 @@ class QueueProcessorThread(threading.Thread):
         self.maildir = Maildir(path, True)
 
     def setMailer(self, mailer):
+        if not(IMailer.providedBy(mailer)):
+            raise (DoesNotImplement)
         self.mailer = mailer
 
     def _parseMessage(self, message):
@@ -252,8 +272,45 @@ class QueueProcessorThread(threading.Thread):
 
         return fromaddr, toaddrs, rest
 
+    def _unlinkFile(self, filename):
+        """Unlink the message file """
+        try:
+            os.unlink(filename)
+        except OSError, e:
+            if e.errno == 2: # file does not exist
+                # someone else unlinked the file; oh well
+                pass
+            else:
+                # something bad happend, log it
+                raise
+
+    def _queueRetryWait(self, tmp_filename, forever):
+        """Implements Retry Wait if there is an SMTP Connection
+           Failure or error 4xx due to machine load etc
+        """
+        # Clean up by unlinking lock link
+        self._unlinkFile(tmp_filename)
+        # Wait specified retry interval in stages of self.interval
+        count = self.retry_interval
+        while(count > 0 and not self.__stopped):
+            if forever:
+                time.sleep(self.interval)
+            count -= self.interval
+        # Plug for test routines so that we know we got here
+        if not forever:
+            self.test_results['_queueRetryWait'] \
+                    = "Retry timeout: %s count: %s" \
+                        % (str(self.retry_interval), str(count))
+
+
     def run(self, forever=True):
         atexit.register(self.stop)
+        # Clean .sending- lock files from queue
+        if self.clean_lock_links:
+            self.maildir._cleanLockLinks()
+        # Set up logger for mailer
+        if hasattr(self.mailer, 'set_logger'):
+            self.mailer.set_logger(self.log)
         while not self.__stopped:
             for filename in self.maildir:
                 # if we are asked to stop while sending messages, do so
@@ -263,8 +320,9 @@ class QueueProcessorThread(threading.Thread):
                 fromaddr = ''
                 toaddrs = ()
                 head, tail = os.path.split(filename)
-                tmp_filename = os.path.join(head, '.sending-' + tail)
-                rejected_filename = os.path.join(head, '.rejected-' + tail)
+                tmp_filename = os.path.join(head, SENDING_MSG_LOCK_PREFIX + tail)
+                rejected_filename = os.path.join(head, REJECTED_MSG_PREFIX + tail)
+                message_id = os.path.basename(filename)
                 try:
                     # perform a series of operations in an attempt to ensure
                     # that no two threads/processes send this message
@@ -339,53 +397,46 @@ class QueueProcessorThread(threading.Thread):
                     file.close()
                     fromaddr, toaddrs, message = self._parseMessage(message)
                     try:
-                        self.mailer.send(fromaddr, toaddrs, message)
-                    except smtplib.SMTPResponseException, e:
-                        if 500 <= e.smtp_code <= 599:
-                            # permanent error, ditch the message
-                            self.log.error(
-                                "Discarding email from %s to %s due to"
-                                " a permanent error: %s",
-                                fromaddr, ", ".join(toaddrs), str(e))
-                            os.link(filename, rejected_filename)
-                        else:
-                            # Log an error and retry later
-                            raise
+                        sentaddrs = self.mailer.send(fromaddr,
+                                                     toaddrs,
+                                                     message,
+                                                     message_id)
+                    except MailerTemporaryFailureException, e:
+                        self._queueRetryWait(tmp_filename, forever)
+                        # We break as we don't want to send message later
+                        break;
+                    except MailerPermanentFailureException, e:
+                        os.link(filename, rejected_filename)
+                        sentaddrs = []
 
-                    try:
-                        os.unlink(filename)
-                    except OSError, e:
-                        if e.errno == 2: # file does not exist
-                            # someone else unlinked the file; oh well
-                            pass
-                        else:
-                            # something bad happend, log it
-                            raise
+                    # Unlink message file
+                    self._unlinkFile(filename)
 
-                    try:
-                        os.unlink(tmp_filename)
-                    except OSError, e:
-                        if e.errno == 2: # file does not exist
-                            # someone else unlinked the file; oh well
-                            pass
-                        else:
-                            # something bad happend, log it
-                            raise
+                    # Unlink the lock file
+                    self._unlinkFile(tmp_filename)
 
                     # TODO: maybe log the Message-Id of the message sent
-                    self.log.info("Mail from %s to %s sent.",
-                                  fromaddr, ", ".join(toaddrs))
+                    if len(sentaddrs) > 0:
+                        self.log.info("%s - mail sent, Sender: %s, Rcpt: %s,",
+                                      message_id,
+                                      fromaddr,
+                                      ", ".join(sentaddrs))
                     # Blanket except because we don't want
                     # this thread to ever die
                 except:
                     if fromaddr != '' or toaddrs != ():
                         self.log.error(
-                            "Error while sending mail from %s to %s.",
-                            fromaddr, ", ".join(toaddrs), exc_info=True)
+                            "%s - Error while sending mail, Sender: %s,"
+                            " Rcpt: %s,",
+                            message_id,
+                            fromaddr,
+                            ", ".join(toaddrs),
+                            exc_info=True)
                     else:
                         self.log.error(
-                            "Error while sending mail : %s ",
-                            filename, exc_info=True)
+                            "%s - Error while sending mail.",
+                            message_id,
+                            exc_info=True)
             else:
                 if forever:
                     time.sleep(self.interval)

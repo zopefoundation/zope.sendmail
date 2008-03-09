@@ -28,6 +28,7 @@ from zope.interface import implements, classProvides
 from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
 
+SENDING_MSG_LOCK_PREFIX = '.sending-'
 
 class Maildir(object):
     """See `zope.sendmail.interfaces.IMaildir`"""
@@ -72,6 +73,30 @@ class Maildir(object):
         cur_messages = [join(subdir_cur, x) for x in os.listdir(subdir_cur)
                         if not x.startswith('.')]
         return iter(new_messages + cur_messages)
+
+    def _cleanLockLinks(self):
+        """Clean the maildir of any .sending-* lock files"""
+        # Fish inside the Maildir queue directory to get
+        # .sending-* files
+        # Get The links
+        join = os.path.join
+        subdir_cur = join(self.path, 'cur')
+        subdir_new = join(self.path, 'new')
+        lock_links = [join(subdir_new, x) for x in os.listdir(subdir_new)
+                        if x.startswith(SENDING_MSG_LOCK_PREFIX)]
+        lock_links += [join(subdir_cur, x) for x in os.listdir(subdir_cur)
+                        if x.startswith(SENDING_MSG_LOCK_PREFIX)]
+        # Remove any links
+        for link in lock_links:
+            try:
+                os.unlink(link)
+            except OSError, e:
+                if e.errno == 2: # file does not exist
+                    # someone else unlinked the file; oh well
+                    pass
+                else:
+                    # something bad happend
+                    raise
 
     def newMessage(self):
         "See `zope.sendmail.interfaces.IMaildir`"

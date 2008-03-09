@@ -14,11 +14,18 @@
 
   <!--
     To send mail, uncomment the following directive and be sure to
-    create the queue directory.
+    create the queue directory. 
+    
+    Other parameters sepcify the polling interval, and the retry 
+    interval used when a temporary failure is detected.  Lock links
+    can also be cleared on server start.
 
   <mail:queuedDelivery permission="zope.SendMail"
                       queuePath="./queue"
-                      mailer="smtp" />
+                      retryInterval="300"
+                      pollingInterval="3000"
+	              cleanLockLinks="False"
+		      mailer="smtp" />
    -->
 
   <interface interface="zope.sendmail.interfaces.IMailDelivery" />

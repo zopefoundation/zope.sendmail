@@ -1,6 +1,21 @@
 Change history
 ~~~~~~~~~~~~~~
 
+- Restructured SMTP mailer and QueueProcessorThread so that all 
+  SMTP error logic is in the mailer.  Clears the way for another 
+  mailer for /usr/sbin/sendmail command line can be used with 
+  QueueProcessorThread.
+- Added ability for QueueProcessorThread so that it can handle temporary
+  failures in delivery to its smart host - ie administrator reconfiguring
+  mailserver, mail server reboot/restart
+- Formatted log messages in a consistent fashion so that they can be grepped
+  out of z3.log
+- Added maildir message filename to log messages as message id - allows
+  easy analysis/triage of mail message sending problems
+- Added cleaning of lock links to QueueProcessorThread so that messages can be
+  sent immediately on Zope3 restart.
+- Added pollingInterval (ms), cleanLockLinks (boolean), and retryInterval 
+  (seconds) configure options to configure.zcml.
 
 3.5.0b1 (unreleased)
 --------------------

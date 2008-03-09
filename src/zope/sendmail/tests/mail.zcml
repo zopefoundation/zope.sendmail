@@ -7,6 +7,9 @@
       name="Mail"
       queuePath="path/to/tmp/mailbox"
       mailer="test.smtp"
+      retryInterval="255"
+      pollingInterval="3000"
+      cleanLockLinks="False"
       permission="zope.Public" />
   
   <mail:directDelivery 

@@ -21,6 +21,7 @@ $Id$
 import os.path
 import shutil
 import smtplib
+from socket import error as socket_error
 from tempfile import mkdtemp
 from unittest import TestCase, TestSuite, makeSuite
 
@@ -28,7 +29,9 @@ import transaction
 from zope.testing import doctest
 from zope.interface import implements
 from zope.interface.verify import verifyObject
-from zope.sendmail.interfaces import IMailer
+from zope.sendmail.interfaces import IMailer, ISMTPMailer
+from zope.sendmail.interfaces import MailerTemporaryFailureException
+from zope.sendmail.interfaces import MailerPermanentFailureException
 
 
 class MailerStub(object):
@@ -37,8 +40,9 @@ class MailerStub(object):
     def __init__(self, *args, **kw):
         self.sent_messages = []
 
-    def send(self, fromaddr, toaddrs, message):
+    def send(self, fromaddr, toaddrs, message, message_id):
         self.sent_messages.append((fromaddr, toaddrs, message))
+        return toaddrs
 
 
 class TestMailDataManager(TestCase):
@@ -186,9 +190,13 @@ class MaildirStub(object):
         self.create = create
         self.msgs = []
         self.files = []
+        self.cleaned_lock_links = False
 
     def __iter__(self):
         return iter(self.files)
+
+    def _cleanLockLinks(self):
+        self.cleaned_lock_links = True
 
     def newMessage(self):
         m = MaildirWriterStub()
@@ -200,6 +208,7 @@ class LoggerStub(object):
 
     def __init__(self):
         self.infos = []
+        self.warnings = []
         self.errors = []
 
     def getLogger(name):
@@ -207,6 +216,9 @@ class LoggerStub(object):
 
     def error(self, msg, *args, **kwargs):
         self.errors.append((msg, args, kwargs))
+
+    def warning(self, msg, *args, **kwargs):
+        self.warnings.append((msg, args, kwargs))
 
     def info(self, msg, *args, **kwargs):
         self.infos.append((msg, args, kwargs))
@@ -222,18 +234,28 @@ class BrokenMailerStub(object):
     def __init__(self, *args, **kw):
         pass
 
-    def send(self, fromaddr, toaddrs, message):
+    def send(self, fromaddr, toaddrs, message, message_id):
         raise BizzarreMailError("bad things happened while sending mail")
 
 
-class SMTPResponseExceptionMailerStub(object):
+class MailerPermanentFailureExceptionMailerStub(object):
 
     implements(IMailer)
-    def __init__(self, code):
-        self.code = code
+    def __init__(self, msg='Permanent failure'):
+        self.msg = msg
 
-    def send(self, fromaddr, toaddrs, message):
-        raise smtplib.SMTPResponseException(self.code,  'Serious Error')
+    def send(self, fromaddr, toaddrs, message, message_id):
+        raise MailerPermanentFailureException(self.msg)
+
+
+class MailerTemporaryFailureExceptionMailerStub(object):
+
+    implements(IMailer)
+    def __init__(self, msg='Temporary failure'):
+        self.msg = msg
+
+    def send(self, fromaddr, toaddrs, message, message_id):
+        raise MailerTemporaryFailureException(self.msg)
 
 
 class TestQueuedMailDelivery(TestCase):
@@ -330,8 +352,44 @@ class TestQueueProcessorThread(TestCase):
         self.assertEquals(t, ('bar@example.com', 'baz@example.com'))
         self.assertEquals(m, msg)
 
-    def test_deliveration(self):
+    def test_unlink(self):
+        self.thread.log = LoggerStub()          # Clean log
         self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        os.link(self.filename, self.tmp_filename)
+        self.thread._unlinkFile(self.tmp_filename)
+        self.failUnless(os.path.exists(self.filename))
+        self.failIf(os.path.exists(self.tmp_filename), 'File exists')
+
+    def test_queueRetryWait(self):
+        self.thread.log = LoggerStub()          # Clean log
+        self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        os.link(self.filename, self.tmp_filename)
+        self.thread._queueRetryWait(self.tmp_filename, forever=False)
+        self.failUnless(os.path.exists(self.filename))
+        self.failIf(os.path.exists(self.tmp_filename), 'File exists')
+        # Check that 5 minute wait is happening
+        self.assertEquals(self.thread.test_results,
+                            {'_queueRetryWait':
+                                'Retry timeout: 300.0 count: 0.0'})
+
+    def test_deliveration(self):
+        self.thread.log = LoggerStub()          # Clean log
+        self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
         temp = open(self.filename, "w+b")
         temp.write('X-Zope-From: foo@example.com\n'
                    'X-Zope-To: bar@example.com, baz@example.com\n'
@@ -344,13 +402,15 @@ class TestQueueProcessorThread(TestCase):
                             ('bar@example.com', 'baz@example.com'),
                             'Header: value\n\nBody\n')])
         self.failIf(os.path.exists(self.filename), 'File exists')
+        self.failIf(os.path.exists(self.tmp_filename), 'File exists')
         self.assertEquals(self.thread.log.infos,
-                          [('Mail from %s to %s sent.',
-                            ('foo@example.com',
+                          [('%s - mail sent, Sender: %s, Rcpt: %s,',
+                            ('message', 'foo@example.com',
                              'bar@example.com, baz@example.com'),
                             {})])
 
     def test_error_logging(self):
+        self.thread.log = LoggerStub()          # Clean log
         self.thread.setMailer(BrokenMailerStub())
         self.filename = os.path.join(self.dir, 'message')
         temp = open(self.filename, "w+b")
@@ -361,15 +421,18 @@ class TestQueueProcessorThread(TestCase):
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
         self.assertEquals(self.thread.log.errors,
-                          [('Error while sending mail from %s to %s.',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com'),
-                            {'exc_info': 1})])
+                            [('%s - Error while sending mail, Sender: %s,'
+                              ' Rcpt: %s,',
+                              ('message', 'foo@example.com',
+                               'bar@example.com, baz@example.com'),
+                              {'exc_info': True})])
 
-    def test_smtp_response_error_transient(self):
+    def test_mailer_temporary_failure(self):
         # Test a transient error
-        self.thread.setMailer(SMTPResponseExceptionMailerStub(451))
+        self.thread.log = LoggerStub()          # Clean log
+        self.thread.setMailer(MailerTemporaryFailureExceptionMailerStub())
         self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
         temp = open(self.filename, "w+b")
         temp.write('X-Zope-From: foo@example.com\n'
                    'X-Zope-To: bar@example.com, baz@example.com\n'
@@ -377,19 +440,20 @@ class TestQueueProcessorThread(TestCase):
         temp.close()
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
-
-        # File must remail were it was, so it will be retried
+        # File must remain were it was, so it will be retried
         self.failUnless(os.path.exists(self.filename))
-        self.assertEquals(self.thread.log.errors,
-                          [('Error while sending mail from %s to %s.',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com'),
-                            {'exc_info': 1})])
+        self.failIf(os.path.exists(self.tmp_filename), 'File exists')
+        # Check that 5 minute wait is happening
+        self.assertEquals(self.thread.test_results,
+                           {'_queueRetryWait':
+                                'Retry timeout: 300.0 count: 0.0'})
 
-    def test_smtp_response_error_permanent(self):
+    def test_mailer_permanent_failure(self):
         # Test a permanent error
-        self.thread.setMailer(SMTPResponseExceptionMailerStub(550))
+        self.thread.log = LoggerStub()          # Clean log
+        self.thread.setMailer(MailerPermanentFailureExceptionMailerStub())
         self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
         temp = open(self.filename, "w+b")
         temp.write('X-Zope-From: foo@example.com\n'
                    'X-Zope-To: bar@example.com, baz@example.com\n'
@@ -397,17 +461,28 @@ class TestQueueProcessorThread(TestCase):
         temp.close()
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
-
         # File must be moved aside
-        self.failIf(os.path.exists(self.filename))
+        self.failIf(os.path.exists(self.filename), 'File exists')
+        self.failIf(os.path.exists(self.tmp_filename), 'File exists')
         self.failUnless(os.path.exists(os.path.join(self.dir,
                                                     '.rejected-message')))
-        self.assertEquals(self.thread.log.errors,
-                          [('Discarding email from %s to %s due to a '
-                            'permanent error: %s',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com',
-                             "(550, 'Serious Error')"), {})])
+
+    def test_zzz_qptCleanLockLinks(self):
+        from zope.sendmail.delivery import QueueProcessorThread
+        self.thread = QueueProcessorThread(clean_lock_links=True)
+        self.thread.log = LoggerStub()
+        self.thread.setMaildir(self.md)
+        self.thread.setMailer(self.mailer)
+        self.filename = os.path.join(self.dir, 'message')
+        self.tmp_filename = os.path.join(self.dir, '.sending-message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        self.thread.run(forever=False)
+        self.assertEquals(self.thread.maildir.cleaned_lock_links, True)
 
 
 def test_suite():

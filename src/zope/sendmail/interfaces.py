@@ -54,7 +54,8 @@ $Id$
 """
 __docformat__ = 'restructuredtext'
 
-from zope.interface import Interface, Attribute
+from zope.interface import Interface, Attribute, implements
+from zope.interface.common.interfaces import IException
 from zope.schema import TextLine, Int, Password, Bool
 
 from zope.i18nmessageid import MessageFactory
@@ -108,7 +109,7 @@ class IQueuedMailDelivery(IMailDelivery):
 
 
 class IMailQueueProcessor(Interface):
-    """A mail queue processor that delivers queueud messages asynchronously.
+    """A mail queue processor that delivers queued messages asynchronously.
     """
 
     queuePath = TextLine(
@@ -119,15 +120,79 @@ class IMailQueueProcessor(Interface):
         title=_(u"Polling Interval"),
         description=_(u"How often the queue is checked for new messages"
                        " (in milliseconds)"),
-        default=5000)
+        default=3000)
 
     mailer = Attribute("IMailer that is used for message delivery")
 
+    cleanLockFiles = Bool(
+        title=_(u"Clean Lock Files"),
+        description=_(u"Clean stale lock files from queue before processing"
+                        " start."),
+        default=False)
+
+    retryInterval = Int(
+        title=_(u"Retry Interval"),
+        description=_(u"Retry time after connection failure or SMTP error 4xx."
+                       " (in seconds)"),
+        default=300)
+
+#
+# Exception classes for use within Zope Sendmail, for use of Mailers
+#
+class IMailerFailureException(IException):
+    """Failure in sending mail"""
+    pass
+
+class MailerFailureException(Exception):
+    """Failure in sending mail"""
+
+    implements(IMailerFailureException)
+
+    def __init__(self, message="Failure in sending mail"):
+        self.message = message
+        self.args = (message,)
+
+
+class IMailerTemporaryFailureException(IMailerFailureException):
+    """Temporary failure in sending mail - retry later"""
+    pass
+
+class MailerTemporaryFailureException(MailerFailureException):
+    """Temporary failure in sending mail - retry later"""
+
+    implements(IMailerTemporaryFailureException)
+
+    def __init__(self, message="Temporary failure in sending mail - retry later"):
+        self.message = message
+        self.args = (message,)
+
+
+class IMailerPermanentFailureException(IMailerFailureException):
+    """Permanent failure in sending mail - take reject action"""
+    pass
+
+class MailerPermanentFailureException(MailerFailureException):
+    """Permanent failure in sending mail - take reject action"""
+
+    implements(IMailerPermanentFailureException)
+
+    def __init__(self, message="Permanent failure in sending mail - take reject action"):
+        self.message = message
+        self.args = (message,)
+
 
 class IMailer(Interface):
-    """Mailer handles synchronous mail delivery."""
+    """Mailer handles synchronous mail delivery.
 
-    def send(fromaddr, toaddrs, message):
+    Mailer can raise the exceptions
+
+        MailerPermanentFailure
+        MailerTemporaryFailure
+
+    to indicate to sending process what action to take.
+    """
+
+    def send(fromaddr, toaddrs, message, message_id):
         """Send an email message.
 
         `fromaddr` is the sender address (unicode string),
@@ -138,12 +203,18 @@ class IMailer(Interface):
         2822.  It should contain at least Date, From, To, and Message-Id
         headers.
 
+        `message_id` is an id for the message, typically a filename.
+
         Messages are sent immediatelly.
 
         Dispatches an `IMailSentEvent` on successful delivery, otherwise an
         `IMailErrorEvent`.
         """
 
+    def set_logger(logger):
+        """Set the log object for the Mailer - this is for use by
+           QueueProcessorThread to hand a logging object to the mailer
+        """
 
 class ISMTPMailer(IMailer):
     """A mailer that delivers mail to a relay host via SMTP."""
