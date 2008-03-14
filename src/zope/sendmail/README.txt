@@ -5,6 +5,25 @@ This package is useful when your Zope 3 application wants to send email.  It
 integrates with the transaction mechanism and queues your emails to be sent on
 successful commits only.
 
+State Machine Analysis
+----------------------
+
+State machine diagrams are found in the doc subdirectory.  The API for mailers
+has been changed, and the SMTP logic moved into the SMTP mailer.  Two Exceptions 
+are provided for controlling what the state machine does: MailerPermanentFailure
+and MailerTemporaryFailure.  
+
+The motivation for this was all the trouble we were getting with zope.sendmail
+- it was inexplicably dieing or logging heaps when SMTP Error 451 was 
+recieved...  Here are the things I designed for:
+
+1) Handling of SMTP error 451 etc.
+2) Cleaning stale lock links out of the queue
+3) Handling Server disconnection
+4) Handling of connect() failure
+
+Events 1, 3 and 4 are handled by waiting for 5 minutes, and then
+restarting processing.
 
 API
 ---
@@ -125,3 +144,7 @@ Problems with zope.sendmail
 
 * The IMailSentEvent and IMailErrorEvent events aren't used and can't be used
   (you don't want to send emails during the commit phase).
+
+* Error handling for multiple recipients is only done properly for a single 
+  recipient. Per message state tracking is required, with state stored in say a
+  dbm file alongside the message.
