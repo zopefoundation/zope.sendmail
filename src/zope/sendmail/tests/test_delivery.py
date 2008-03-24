@@ -21,7 +21,7 @@ $Id$
 import os.path
 import shutil
 import smtplib
-from socket import error as socket_error
+import logging
 from tempfile import mkdtemp
 from unittest import TestCase, TestSuite, makeSuite
 
@@ -30,8 +30,8 @@ from zope.testing import doctest
 from zope.interface import implements
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import IMailer, ISMTPMailer
-from zope.sendmail.interfaces import MailerTemporaryFailureException
-from zope.sendmail.interfaces import MailerPermanentFailureException
+from zope.sendmail.interfaces import MailerTemporaryError
+from zope.sendmail.interfaces import MailerPermanentError
 
 
 class MailerStub(object):
@@ -40,7 +40,7 @@ class MailerStub(object):
     def __init__(self, *args, **kw):
         self.sent_messages = []
 
-    def send(self, fromaddr, toaddrs, message, message_id):
+    def send(self, fromaddr, toaddrs, message, queue_id):
         self.sent_messages.append((fromaddr, toaddrs, message))
         return toaddrs
 
@@ -223,6 +223,14 @@ class LoggerStub(object):
     def info(self, msg, *args, **kwargs):
         self.infos.append((msg, args, kwargs))
 
+    def log(self, level, msg, *args, **kwargs):
+        if level == logging.ERROR:
+                self.errors.append((msg, args, kwargs)),
+        elif level == logging.WARNING:
+                self.warnings.append((msg, args, kwargs))
+        elif level ==logging.INFO:
+                self.infos.append((msg, args, kwargs))
+
 
 class BizzarreMailError(IOError):
     pass
@@ -234,28 +242,28 @@ class BrokenMailerStub(object):
     def __init__(self, *args, **kw):
         pass
 
-    def send(self, fromaddr, toaddrs, message, message_id):
+    def send(self, fromaddr, toaddrs, message, queue_id):
         raise BizzarreMailError("bad things happened while sending mail")
 
 
-class MailerPermanentFailureExceptionMailerStub(object):
+class MailerPermanentErrorMailerStub(object):
 
     implements(IMailer)
     def __init__(self, msg='Permanent failure'):
         self.msg = msg
 
-    def send(self, fromaddr, toaddrs, message, message_id):
-        raise MailerPermanentFailureException(self.msg)
+    def send(self, fromaddr, toaddrs, message, queue_id):
+        raise MailerPermanentError(self.msg)
 
 
-class MailerTemporaryFailureExceptionMailerStub(object):
+class MailerTemporaryErrorMailerStub(object):
 
     implements(IMailer)
     def __init__(self, msg='Temporary failure'):
         self.msg = msg
 
-    def send(self, fromaddr, toaddrs, message, message_id):
-        raise MailerTemporaryFailureException(self.msg)
+    def send(self, fromaddr, toaddrs, message, queue_id):
+        raise MailerTemporaryError(self.msg)
 
 
 class TestQueuedMailDelivery(TestCase):
@@ -430,7 +438,7 @@ class TestQueueProcessorThread(TestCase):
     def test_mailer_temporary_failure(self):
         # Test a transient error
         self.thread.log = LoggerStub()          # Clean log
-        self.thread.setMailer(MailerTemporaryFailureExceptionMailerStub())
+        self.thread.setMailer(MailerTemporaryErrorMailerStub())
         self.filename = os.path.join(self.dir, 'message')
         self.tmp_filename = os.path.join(self.dir, '.sending-message')
         temp = open(self.filename, "w+b")
@@ -451,7 +459,7 @@ class TestQueueProcessorThread(TestCase):
     def test_mailer_permanent_failure(self):
         # Test a permanent error
         self.thread.log = LoggerStub()          # Clean log
-        self.thread.setMailer(MailerPermanentFailureExceptionMailerStub())
+        self.thread.setMailer(MailerPermanentErrorMailerStub())
         self.filename = os.path.join(self.dir, 'message')
         self.tmp_filename = os.path.join(self.dir, '.sending-message')
         temp = open(self.filename, "w+b")

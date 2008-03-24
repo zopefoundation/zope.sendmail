@@ -91,7 +91,7 @@ class Maildir(object):
             try:
                 os.unlink(link)
             except OSError, e:
-                if e.errno == 2: # file does not exist
+                if e.errno == errno.ENOENT: # file does not exist
                     # someone else unlinked the file; oh well
                     pass
                 else:

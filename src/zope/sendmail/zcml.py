@@ -110,7 +110,7 @@ def queuedDelivery(_context,
         if mailerObject is None:
             raise ConfigurationError("Mailer %r is not defined" % mailer)
 
-        thread = QueueProcessorThread(interval=pollingInterval/1000,
+        thread = QueueProcessorThread(interval=pollingInterval/1000.0,
                                       retry_interval=retryInterval,
                                       clean_lock_links=cleanLockLinks)
         thread.setMailer(mailerObject)

@@ -25,8 +25,8 @@ from StringIO import StringIO
 from zope.interface.verify import verifyObject
 
 from zope.sendmail.interfaces import (ISMTPMailer,
-                                      MailerTemporaryFailureException,
-                                      MailerPermanentFailureException)
+                                      MailerTemporaryError,
+                                      MailerPermanentError)
 from zope.sendmail.mailer import SMTPMailer
 from zope.sendmail.tests.test_delivery import LoggerStub
 
@@ -38,7 +38,7 @@ class TestSMTPMailer(unittest.TestCase):
         self.test_kwargs = {'fromaddr': 'me@example.com',
                           'toaddrs': ('you@example.com', 'him@example.com'),
                           'message': 'Headers: headers\n\nbodybodybody\n-- \nsig\n',
-                          'message_id': 'dummy_file_name_XXX345YZ'}
+                          'queue_id': 'dummy_file_name_XXX345YZ'}
 
     def setUp(self, port=None, exception=None, exception_args=None, 
               send_errors=None):
@@ -61,6 +61,8 @@ class TestSMTPMailer(unittest.TestCase):
                 self.fromaddr = f
                 self.toaddrs = t
                 self.msgtext = m
+                # This code is like this so that multiple classes are 
+                # not neeeded
                 if hasattr(self, '_exception'):
                     if self._exception and issubclass(self._exception, Exception):
                         if hasattr(self, '_exception_args') \
@@ -107,10 +109,12 @@ class TestSMTPMailer(unittest.TestCase):
         test_mailer = SMTPMailer()
         log_object = logging.getLogger('test_logger')
         test_mailer.set_logger(log_object)
-        self.assertEquals(isinstance(test_mailer.logger, logging.Logger), True)
+        self.assertTrue(isinstance(test_mailer.logger, logging.Logger))
 
     def test_send(self):
         for run in (1,2):
+            # run self.setUp() to reinitialise target host and port
+            # as required by this test, other tests MAY have messed with things
             if run == 2:
                 self.setUp(u'25')
             else:
@@ -126,10 +130,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_no_connect(self):
         # set up test value to raise socket.error exception
         self.setUp('0')
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.infos,
                          [('%s - SMTP server %s:%s - could not connect(), %s.',
                            ('dummy_file_name_XXX345YZ', u'localhost', '0',
@@ -138,10 +140,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_smtp_data_error(self):
         self.setUp(exception=smtplib.SMTPDataError,
                    exception_args=(471, 'SMTP Data Error'))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
                 [('%s - SMTP Error: %s - %s, Sender: %s, Rcpt: %s',
                   ('dummy_file_name_XXX345YZ', '471', 'SMTP Data Error',
@@ -152,10 +152,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_smtp_really_bad_error(self):
         self.setUp(exception=smtplib.SMTPResponseException,
                    exception_args=(550, 'SMTP Really Bad Error'))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerPermanentFailureException:
-            pass
+        self.assertRaises(MailerPermanentError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
                 [('%s - SMTP Error: %s - %s, Sender: %s, Rcpt: %s',
                   ('dummy_file_name_XXX345YZ', '550', 'SMTP Really Bad Error',
@@ -165,10 +163,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_smtp_crazy_error(self):
         self.setUp(exception=smtplib.SMTPResponseException,
                    exception_args=(200, 'SMTP Crazy Error'))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
                 [('%s - SMTP Error: %s - %s, Sender: %s, Rcpt: %s',
                   ('dummy_file_name_XXX345YZ', '200', 'SMTP Crazy Error',
@@ -178,10 +174,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_smtp_server_disconnected(self):
         self.setUp(exception=smtplib.SMTPServerDisconnected,
                    exception_args=('TCP RST - unexpected dissconnection',))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.infos,
             [('%s - SMTP server %s:%s - %s',
               ('dummy_file_name_XXX345YZ',
@@ -193,10 +187,8 @@ class TestSMTPMailer(unittest.TestCase):
         self.setUp(exception=smtplib.SMTPSenderRefused,
                    exception_args=(550, 'SMTP Sender Refused',
                                    'iamasender@bogus.com'))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
             [('%s - SMTP Error: %s - %s, Sender: %s, Rcpt: %s',
               ('dummy_file_name_XXX345YZ', '550', 'SMTP Sender Refused',
@@ -207,10 +199,8 @@ class TestSMTPMailer(unittest.TestCase):
         self.setUp(exception=smtplib.SMTPRecipientsRefused,
          exception_args=({'you@example.com': (451, 'SMTP Recipient A Refused'),
                      'him@example.com': (450, 'SMTP Recipient B Refused')},))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerTemporaryFailureException:
-            pass
+        self.assertRaises(MailerTemporaryError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
             [('%s - SMTP Error: %s - %s, Sender: %s, Rcpt: %s',
               ('dummy_file_name_XXX345YZ', '450', 'SMTP Recipient B Refused',
@@ -220,10 +210,8 @@ class TestSMTPMailer(unittest.TestCase):
     def test_mailer_smtp_exception(self):
         self.setUp(exception=smtplib.SMTPException,
                    exception_args=('SMTP Permanent Failure',))
-        try:
-            self.mailer.send(**self.test_kwargs)
-        except MailerPermanentFailureException:
-            pass
+        self.assertRaises(MailerPermanentError,
+                             self.mailer.send, **self.test_kwargs)
         self.assertEquals(self.mailer.logger.warnings,
             [('%s - SMTP failure: %s',
               ('dummy_file_name_XXX345YZ',

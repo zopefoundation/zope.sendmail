@@ -141,7 +141,7 @@ class IMailQueueProcessor(Interface):
 #
 class IMailerFailureException(IException):
     """Failure in sending mail"""
-    pass
+
 
 class MailerFailureException(Exception):
     """Failure in sending mail"""
@@ -149,34 +149,38 @@ class MailerFailureException(Exception):
     implements(IMailerFailureException)
 
     def __init__(self, message="Failure in sending mail"):
+        """Embeds new default exception message text"""
         self.message = message
         self.args = (message,)
 
 
-class IMailerTemporaryFailureException(IMailerFailureException):
-    """Temporary failure in sending mail - retry later"""
-    pass
-
-class MailerTemporaryFailureException(MailerFailureException):
+class IMailerTemporaryError(IMailerFailureException):
     """Temporary failure in sending mail - retry later"""
 
-    implements(IMailerTemporaryFailureException)
+
+class MailerTemporaryError(MailerFailureException):
+    """Temporary failure in sending mail - retry later"""
+
+    implements(IMailerTemporaryError)
 
     def __init__(self, message="Temporary failure in sending mail - retry later"):
+        """Embeds new default exception message text"""
         self.message = message
         self.args = (message,)
 
 
-class IMailerPermanentFailureException(IMailerFailureException):
-    """Permanent failure in sending mail - take reject action"""
-    pass
-
-class MailerPermanentFailureException(MailerFailureException):
+class IMailerPermanentError(IMailerFailureException):
     """Permanent failure in sending mail - take reject action"""
 
-    implements(IMailerPermanentFailureException)
 
-    def __init__(self, message="Permanent failure in sending mail - take reject action"):
+class MailerPermanentError(MailerFailureException):
+    """Permanent failure in sending mail - take reject action"""
+
+    implements(IMailerPermanentError)
+
+    def __init__(self,
+            message="Permanent failure in sending mail - take reject action"):
+        """Embeds new default exception message text"""
         self.message = message
         self.args = (message,)
 
@@ -186,13 +190,13 @@ class IMailer(Interface):
 
     Mailer can raise the exceptions
 
-        MailerPermanentFailure
-        MailerTemporaryFailure
+        MailerPermanentError
+        MailerTemporaryError
 
     to indicate to sending process what action to take.
     """
 
-    def send(fromaddr, toaddrs, message, message_id):
+    def send(fromaddr, toaddrs, message, queue_id):
         """Send an email message.
 
         `fromaddr` is the sender address (unicode string),
@@ -203,7 +207,7 @@ class IMailer(Interface):
         2822.  It should contain at least Date, From, To, and Message-Id
         headers.
 
-        `message_id` is an id for the message, typically a filename.
+        `queue_id` is an id for the message, typically a filename.
 
         Messages are sent immediatelly.
 
@@ -212,9 +216,15 @@ class IMailer(Interface):
         """
 
     def set_logger(logger):
-        """Set the log object for the Mailer - this is for use by
-           QueueProcessorThread to hand a logging object to the mailer
+        """Set the logger for additional messages.
+        
+        The additional messages include information about SMTP
+        errors, connection timeouts, etc.
+        
+        The logger should be a logging.Logger object.  If you pass None,
+        no messages will be logged.
         """
+
 
 class ISMTPMailer(IMailer):
     """A mailer that delivers mail to a relay host via SMTP."""

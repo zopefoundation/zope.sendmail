@@ -22,6 +22,7 @@ __docformat__ = 'restructuredtext'
 import atexit
 import logging
 import os
+import errno
 import os.path
 import rfc822
 import stat
@@ -36,8 +37,8 @@ from zope.interface import implements, providedBy
 from zope.interface.exceptions import DoesNotImplement
 from zope.sendmail.interfaces import IDirectMailDelivery, IQueuedMailDelivery
 from zope.sendmail.interfaces import ISMTPMailer, IMailer
-from zope.sendmail.interfaces import MailerTemporaryFailureException
-from zope.sendmail.interfaces import MailerPermanentFailureException
+from zope.sendmail.interfaces import MailerTemporaryError
+from zope.sendmail.interfaces import MailerPermanentError
 from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
 import transaction
@@ -241,13 +242,12 @@ class QueueProcessorThread(threading.Thread):
         self.maildir = Maildir(path, True)
 
     def setMailer(self, mailer):
-        if not(IMailer.providedBy(mailer)):
+        if not IMailer.providedBy(mailer):
             raise (DoesNotImplement)
         self.mailer = mailer
 
     def _parseMessage(self, message):
-        """Extract fromaddr and toaddrs from the first two lines of
-        the `message`.
+        """Extract fromaddr and toaddrs from first two lines of the `message`.
 
         Returns a fromaddr string, a toaddrs tuple and the message
         string.
@@ -277,26 +277,30 @@ class QueueProcessorThread(threading.Thread):
         try:
             os.unlink(filename)
         except OSError, e:
-            if e.errno == 2: # file does not exist
+            if e.errno == errno.ENOENT: # file does not exist
                 # someone else unlinked the file; oh well
                 pass
             else:
-                # something bad happend, log it
+                # something bad happened, log it
                 raise
 
     def _queueRetryWait(self, tmp_filename, forever):
-        """Implements Retry Wait if there is an SMTP Connection
-           Failure or error 4xx due to machine load etc
+        """Implements Retry Wait
+        
+        This is can be due to an SMTP Connection Failure or error 4xx
+        due to machine load etc
         """
         # Clean up by unlinking lock link
         self._unlinkFile(tmp_filename)
         # Wait specified retry interval in stages of self.interval
         count = self.retry_interval
-        while(count > 0 and not self.__stopped):
+        while count > 0 and not self.__stopped:
             if forever:
                 time.sleep(self.interval)
             count -= self.interval
         # Plug for test routines so that we know we got here
+        # We want to definitvely test that above count down code is
+        # functioning - can't have unit test code taking 10 minutes!
         if not forever:
             self.test_results['_queueRetryWait'] \
                     = "Retry timeout: %s count: %s" \
@@ -322,7 +326,7 @@ class QueueProcessorThread(threading.Thread):
                 head, tail = os.path.split(filename)
                 tmp_filename = os.path.join(head, SENDING_MSG_LOCK_PREFIX + tail)
                 rejected_filename = os.path.join(head, REJECTED_MSG_PREFIX + tail)
-                message_id = os.path.basename(filename)
+                queue_id = os.path.basename(filename)
                 try:
                     # perform a series of operations in an attempt to ensure
                     # that no two threads/processes send this message
@@ -336,7 +340,7 @@ class QueueProcessorThread(threading.Thread):
                         mtime = os.stat(tmp_filename)[stat.ST_MTIME]
                         age = time.time() - mtime
                     except OSError, e:
-                        if e.errno == 2: # file does not exist
+                        if e.errno == errno.ENOENT: # file does not exist
                             # the tmp file could not be stated because it
                             # doesn't exist, that's fine, keep going
                             pass
@@ -361,7 +365,7 @@ class QueueProcessorThread(threading.Thread):
                             # if we get here, the file existed, but was too
                             # old, so it was unlinked
                         except OSError, e:
-                            if e.errno == 2: # file does not exist
+                            if e.errno == errno.ENOENT: # file does not exist
                                 # it looks like someone else removed the tmp
                                 # file, that's fine, we'll try to deliver the
                                 # message again later
@@ -375,7 +379,7 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         os.utime(filename, None)
                     except OSError, e:
-                        if e.errno == 2: # file does not exist
+                        if e.errno == errno.ENOENT: # file does not exist
                             # someone removed the message before we could
                             # touch it, no need to complain, we'll just keep
                             # going
@@ -386,7 +390,7 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         os.link(filename, tmp_filename)
                     except OSError, e:
-                        if e.errno == 17: # file exists
+                        if e.errno == errno.EEXIST: # file exists
                             # it looks like someone else is sending this
                             # message too; we'll try again later
                             continue
@@ -400,12 +404,12 @@ class QueueProcessorThread(threading.Thread):
                         sentaddrs = self.mailer.send(fromaddr,
                                                      toaddrs,
                                                      message,
-                                                     message_id)
-                    except MailerTemporaryFailureException, e:
+                                                     queue_id)
+                    except MailerTemporaryError, e:
                         self._queueRetryWait(tmp_filename, forever)
                         # We break as we don't want to send message later
-                        break;
-                    except MailerPermanentFailureException, e:
+                        break
+                    except MailerPermanentError, e:
                         os.link(filename, rejected_filename)
                         sentaddrs = []
 
@@ -418,7 +422,7 @@ class QueueProcessorThread(threading.Thread):
                     # TODO: maybe log the Message-Id of the message sent
                     if len(sentaddrs) > 0:
                         self.log.info("%s - mail sent, Sender: %s, Rcpt: %s,",
-                                      message_id,
+                                      queue_id,
                                       fromaddr,
                                       ", ".join(sentaddrs))
                     # Blanket except because we don't want
@@ -428,14 +432,14 @@ class QueueProcessorThread(threading.Thread):
                         self.log.error(
                             "%s - Error while sending mail, Sender: %s,"
                             " Rcpt: %s,",
-                            message_id,
+                            queue_id,
                             fromaddr,
                             ", ".join(toaddrs),
                             exc_info=True)
                     else:
                         self.log.error(
                             "%s - Error while sending mail.",
-                            message_id,
+                            queue_id,
                             exc_info=True)
             else:
                 if forever:
