@@ -1,8 +1,20 @@
 Change history
 ~~~~~~~~~~~~~~
 
+3.5.0 (2008-07-05)
+------------------
 
-3.5.0b1 (unreleased)
+- final release (identical with 3.5.0b2)
+
+3.5.0b2 (2007-12-19)
+--------------------
+
+- If the SMTP server rejects a message (for example, when the sender or
+  recipient address is malformed), that email stays in the queue forever
+  (https://bugs.launchpad.net/zope3/+bug/157104).
+
+
+3.5.0b1 (2007-11-08)
 --------------------
 
 - Added README.txt
