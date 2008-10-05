@@ -72,5 +72,6 @@ class SMTPMailer(object):
         connection.sendmail(fromaddr, toaddrs, message)
         try:
             connection.quit()
-        except:
+        except socket.sslerror:
+            #something weird happened while quiting
             pass
