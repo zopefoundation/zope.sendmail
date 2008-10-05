@@ -70,4 +70,7 @@ class SMTPMailer(object):
                                 'is configured')
 
         connection.sendmail(fromaddr, toaddrs, message)
-        connection.quit()
+        try:
+            connection.quit()
+        except:
+            pass
