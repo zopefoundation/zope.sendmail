@@ -74,4 +74,4 @@ class SMTPMailer(object):
             connection.quit()
         except socket.sslerror:
             #something weird happened while quiting
-            pass
+            connection.close()
