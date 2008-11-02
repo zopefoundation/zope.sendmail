@@ -4,7 +4,8 @@ Change history
 3.5.1 (unreleased)
 ------------------
 
-
+- work around a problem when smtp quit fails, the mail was considered not
+  delivered where just the quit failed
 
 3.5.0 (2008-07-05)
 ------------------
