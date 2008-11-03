@@ -30,12 +30,12 @@ class TestSMTPMailer(unittest.TestCase):
         global SMTP
         class SMTP(object):
 
-            failOnQuit = False
+            fail_on_quit = False
 
             def __init__(myself, h, p):
                 myself.hostname = h
                 myself.port = p
-                myself.quited = False
+                myself.quitted = False
                 myself.closed = False
                 if type(p) == type(u""):
                     raise socket.error("Int or String expected")
@@ -51,9 +51,9 @@ class TestSMTPMailer(unittest.TestCase):
                 self.password = password
 
             def quit(self):
-                if self.failOnQuit:
+                if self.fail_on_quit:
                     raise socket.sslerror("dang")
-                self.quited = True
+                self.quitted = True
                 self.close()
 
             def close(self):
@@ -90,7 +90,7 @@ class TestSMTPMailer(unittest.TestCase):
             self.assertEquals(self.smtp.fromaddr, fromaddr)
             self.assertEquals(self.smtp.toaddrs, toaddrs)
             self.assertEquals(self.smtp.msgtext, msgtext)
-            self.assert_(self.smtp.quited)
+            self.assert_(self.smtp.quitted)
             self.assert_(self.smtp.closed)
 
     def test_send_auth(self):
@@ -109,11 +109,11 @@ class TestSMTPMailer(unittest.TestCase):
         self.assertEquals(self.smtp.fromaddr, fromaddr)
         self.assertEquals(self.smtp.toaddrs, toaddrs)
         self.assertEquals(self.smtp.msgtext, msgtext)
-        self.assert_(self.smtp.quited)
+        self.assert_(self.smtp.quitted)
         self.assert_(self.smtp.closed)
 
     def test_send_failQuit(self):
-        self.mailer.smtp.failOnQuit = True
+        self.mailer.smtp.fail_on_quit = True
         try:
             fromaddr = 'me@example.com'
             toaddrs = ('you@example.com', 'him@example.com')
@@ -122,10 +122,10 @@ class TestSMTPMailer(unittest.TestCase):
             self.assertEquals(self.smtp.fromaddr, fromaddr)
             self.assertEquals(self.smtp.toaddrs, toaddrs)
             self.assertEquals(self.smtp.msgtext, msgtext)
-            self.assert_(not self.smtp.quited)
+            self.assert_(not self.smtp.quitted)
             self.assert_(self.smtp.closed)
         finally:
-            self.mailer.smtp.failOnQuit = False
+            self.mailer.smtp.fail_on_quit = False
 
 
 class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
@@ -138,7 +138,7 @@ class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
             def __init__(myself, h, p):
                 myself.hostname = h
                 myself.port = p
-                myself.quited = False
+                myself.quitted = False
                 myself.closed = False
                 if type(p) == type(u""):
                     raise socket.error("Int or String expected")
