@@ -39,6 +39,12 @@ from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
 import transaction
 
+import sys
+if sys.platform == 'win32':
+    import win32file
+    _os_link = lambda src, dst: win32file.CreateHardLink(dst, src, None)
+else:
+    _os_link = os.link
 
 # The longest time sending a file is expected to take.  Longer than this and
 # the send attempt will be assumed to have failed.  This means that sending
@@ -326,11 +332,16 @@ class QueueProcessorThread(threading.Thread):
                     # creating this hard link will fail if another process is
                     # also sending this message
                     try:
-                        os.link(filename, tmp_filename)
+                        #os.link(filename, tmp_filename)
+                        _os_link(filename, tmp_filename)
                     except OSError, e:
-                        if e.errno == 17: # file exists
+                        if e.errno == 17: # file exists, *nix
                             # it looks like someone else is sending this
                             # message too; we'll try again later
+                            continue
+                    except error, e:
+                        if e[0] == 183 and e[1] == 'CreateHardLink':
+                            # file exists, win32
                             continue
 
                     # read message file and send contents
@@ -347,7 +358,8 @@ class QueueProcessorThread(threading.Thread):
                                 "Discarding email from %s to %s due to"
                                 " a permanent error: %s",
                                 fromaddr, ", ".join(toaddrs), str(e))
-                            os.link(filename, rejected_filename)
+                            #os.link(filename, rejected_filename)
+                            _os_link(filename, rejected_filename)
                         else:
                             # Log an error and retry later
                             raise
