@@ -1,14 +1,14 @@
 Change history
 ~~~~~~~~~~~~~~
 
-3.5.1 (unreleased)
+3.5.1 (2009-01-26)
 ------------------
 
 - Copied over the UtilityTerm and UtilityVocabulary implementation from
   zope.app.component to avoid a dependency.
 
-- work around a problem when smtp quit fails, the mail was considered not
-  delivered where just the quit failed
+- Work around a problem when smtp quit fails, the mail was considered not
+  delivered where just the quit failed.
 
 3.5.0 (2008-07-05)
 ------------------

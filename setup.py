@@ -19,12 +19,12 @@ from setuptools import setup, find_packages
 
 
 setup(name='zope.sendmail',
-      version = '3.5.1-dev',
-      url='http://cheeseshop.python.org/pypi/zope.sendmail',
+      version = '3.5.1',
+      url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
       author='Zope Corporation and Contributors',
-      author_email='zope3-dev@zope.org',
+      author_email='zope-dev@zope.org',
       long_description='\n\n'.join([
           open('README.txt').read(),
           open('CHANGES.txt').read(),
