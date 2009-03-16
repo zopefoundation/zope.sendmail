@@ -1,9 +1,17 @@
-Change history
-~~~~~~~~~~~~~~
+=======
+CHANGES
+=======
 
-3.5.2 (unreleased)
+3.6.0 (unreleased)
 ------------------
 
+- Use simple vocabulary factory function instead of custom `UtilityTerm`
+  and `UtilityVocabulary` classes, copied from ``zope.app.component`` in
+  the previous release.
+
+- Depend on the ``transaction`` package instead of ``ZODB3``.
+
+- Remove zcml slugs and zpkg-related files.
 
 3.5.1 (2009-01-26)
 ------------------

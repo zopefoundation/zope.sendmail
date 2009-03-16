@@ -19,7 +19,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='zope.sendmail',
-      version = '3.5.2dev',
+      version = '3.6.0dev',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
@@ -36,13 +36,21 @@ setup(name='zope.sendmail',
       namespace_packages=['zope',],
       tests_require = ['zope.testing'],
       install_requires=['setuptools',
-                        'ZODB3',
-                        'zope.component',
-                        'zope.configuration',
+                        'transaction',
                         'zope.i18nmessageid',
                         'zope.interface',
                         'zope.schema',
+
+                        # XXX: maybe the following should moved into
+                        # extras to ease reusability.
+
+                        # it's only needed for vocabulary and zcml
+                        'zope.component',
+
+                        # these are only needed for zcml
+                        'zope.configuration',
                         'zope.security',
+
                        ],
       include_package_data = True,
       zip_safe = False,
