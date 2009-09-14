@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.6.0 (unreleased)
+3.6.0 (2009-09-14)
 ------------------
 
 - Use simple vocabulary factory function instead of custom `UtilityTerm`
@@ -12,6 +12,9 @@ CHANGES
 - Depend on the ``transaction`` package instead of ``ZODB3``.
 
 - Remove zcml slugs and zpkg-related files.
+
+- Work around problem when used with Python >=2.5.1.  See
+  https://bugs.edge.launchpad.net/zope.sendmail/+bug/413335 .
 
 3.5.1 (2009-01-26)
 ------------------
