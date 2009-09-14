@@ -24,7 +24,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='zope.sendmail',
-      version = '3.6.0',
+      version = '3.6.1dev',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
