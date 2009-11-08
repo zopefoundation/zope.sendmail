@@ -2,10 +2,11 @@
 CHANGES
 =======
 
-3.x.x (unreleased)
+3.6.1 (unreleased)
 ------------------
 
-- (no changes so far)
+- Depend on ``zope.component`` >= 3.8.0, which supports the new semantic of
+  zope.component.zcml.proxify needed by zope.sendmail.zcml.
 
 3.6.0 (2009-09-14)
 ------------------

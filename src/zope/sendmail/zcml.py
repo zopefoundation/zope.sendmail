@@ -18,7 +18,7 @@ $Id$
 __docformat__ = 'restructuredtext'
 
 from zope.component import queryUtility
-from zope.component.zcml import handler, proxify, PublicPermission
+from zope.component.zcml import handler, proxify
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
@@ -32,12 +32,7 @@ from zope.sendmail.interfaces import IMailer, IMailDelivery
 from zope.sendmail.mailer import SMTPMailer
 
 def _assertPermission(permission, interfaces, component):
-    if permission is not None:
-        if permission == PublicPermission:
-            permission = CheckerPublic
-        checker = InterfaceChecker(interfaces, permission)
-
-    return proxify(component, checker)
+    return proxify(component, provides=interfaces, permission=permission)
 
 class IDeliveryDirective(Interface):
     """This abstract directive describes a generic mail delivery utility

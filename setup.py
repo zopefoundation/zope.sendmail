@@ -50,7 +50,7 @@ setup(name='zope.sendmail',
                         # extras to ease reusability.
 
                         # it's only needed for vocabulary and zcml
-                        'zope.component',
+                        'zope.component>=3.8.0dev',
 
                         # these are only needed for zcml
                         'zope.configuration',
