@@ -24,7 +24,7 @@ from setuptools import setup, find_packages
 
 
 setup(name='zope.sendmail',
-      version = '3.6.1dev',
+      version = '3.6.1',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
@@ -50,7 +50,7 @@ setup(name='zope.sendmail',
                         # extras to ease reusability.
 
                         # it's only needed for vocabulary and zcml
-                        'zope.component>=3.8.0dev',
+                        'zope.component>=3.8.0',
 
                         # these are only needed for zcml
                         'zope.configuration',

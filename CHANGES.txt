@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.6.1 (unreleased)
+3.6.1 (2009-11-16)
 ------------------
 
 - Depend on ``zope.component`` >= 3.8.0, which supports the new semantic of
