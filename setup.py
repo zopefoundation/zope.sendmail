@@ -34,28 +34,23 @@ setup(name='zope.sendmail',
           open('README.txt').read(),
           open('CHANGES.txt').read(),
           ]),
-
       packages=find_packages('src'),
-      package_dir = {'': 'src'},
-
+      package_dir={'': 'src'},
       namespace_packages=['zope',],
-      tests_require = ['zope.testing'],
+      tests_require=['zope.security',
+                     'zope.testing',
+                    ],
+      extras_require=dict(test=['zope.security',
+                                'zope.testing']),
       install_requires=['setuptools',
                         'transaction',
                         'zope.i18nmessageid',
                         'zope.interface',
                         'zope.schema',
-
-                        # XXX: maybe the following should moved into
-                        # extras to ease reusability.
-
                         # it's only needed for vocabulary and zcml
                         'zope.component>=3.8.0',
-
                         # these are only needed for zcml
                         'zope.configuration',
-                        'zope.security',
-
                        ],
       include_package_data = True,
       zip_safe = False,

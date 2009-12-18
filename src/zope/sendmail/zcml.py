@@ -18,21 +18,32 @@ $Id$
 __docformat__ = 'restructuredtext'
 
 from zope.component import queryUtility
-from zope.component.zcml import handler, proxify
+from zope.component.zcml import handler
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
 from zope.schema import TextLine, BytesLine, Int
-from zope.security.checker import InterfaceChecker, CheckerPublic
-from zope.security.zcml import Permission
 
 from zope.sendmail.delivery import QueuedMailDelivery, DirectMailDelivery
 from zope.sendmail.delivery import QueueProcessorThread
 from zope.sendmail.interfaces import IMailer, IMailDelivery
 from zope.sendmail.mailer import SMTPMailer
 
+try:
+    from zope.component.security import proxify
+    from zope.security.zcml import Permission
+except ImportError:
+    SECURITY_SUPPORT = False
+    from zope.schema import TextLine as Permission
+else:
+    SECURITY_SUPPORT = True
+
 def _assertPermission(permission, interfaces, component):
+    if not SECURITY_SUPPORT:
+        raise ConfigurationError("security proxied components are not "
+            "supported because zope.security is not available")
     return proxify(component, provides=interfaces, permission=permission)
+
 
 class IDeliveryDirective(Interface):
     """This abstract directive describes a generic mail delivery utility
@@ -45,15 +56,15 @@ class IDeliveryDirective(Interface):
         default=u"Mail",
         required=False)
 
-    permission = Permission(
-        title=u"Permission",
-        description=u"Defines the permission needed to use this service.",
-        required=True)
-
     mailer = TextLine(
         title=u"Mailer",
         description=u"Defines the mailer to be used for sending mail.",
         required=True)
+
+    permission = Permission(
+        title=u"Permission",
+        description=u"Defines the permission needed to use this service.",
+        required=False)
 
 
 class IQueuedDeliveryDirective(IDeliveryDirective):
@@ -65,11 +76,12 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
         description=u"Defines the path for the queue directory.",
         required=True)
 
-def queuedDelivery(_context, permission, queuePath, mailer, name="Mail"):
+def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail"):
 
     def createQueuedDelivery():
         delivery = QueuedMailDelivery(queuePath)
-        delivery = _assertPermission(permission, IMailDelivery, delivery)
+        if permission is not None:
+            delivery = _assertPermission(permission, IMailDelivery, delivery)
 
         handler('registerUtility', delivery, IMailDelivery, name)
 
@@ -91,7 +103,7 @@ class IDirectDeliveryDirective(IDeliveryDirective):
     """This directive creates and registers a global direct mail utility. It
     should be only called once during startup."""
 
-def directDelivery(_context, permission, mailer, name="Mail"):
+def directDelivery(_context, mailer, permission=None, name="Mail"):
 
     def createDirectDelivery():
         mailerObject = queryUtility(IMailer, mailer)
@@ -99,7 +111,8 @@ def directDelivery(_context, permission, mailer, name="Mail"):
             raise ConfigurationError("Mailer %r is not defined" %mailer)
 
         delivery = DirectMailDelivery(mailerObject)
-        delivery = _assertPermission(permission, IMailDelivery, delivery)
+        if permission is not None:
+            delivery = _assertPermission(permission, IMailDelivery, delivery)
 
         handler('registerUtility', delivery, IMailDelivery, name)
 

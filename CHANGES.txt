@@ -5,7 +5,10 @@ CHANGES
 3.6.2 (unreleased)
 ------------------
 
-- ...
+- Removed dependency on ``zope.security``: the security support is optional,
+  and only available if the ``zope.security`` package is available. This change
+  is similar to the optional security support introduced in ``zope.component``
+  3.8.0, and in fact it uses the same helpers.
 
 3.6.1 (2009-11-16)
 ------------------
