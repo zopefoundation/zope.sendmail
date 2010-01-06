@@ -44,12 +44,19 @@ class FakeOsPathModule(object):
     def __init__(self, files, dirs):
         self.files = files
         self.dirs = dirs
+        mtimes = {}
+        for t,f in enumerate(files):
+            mtimes[f] = 9999 - t
+        self._mtimes = mtimes
 
     def join(self, *args):
         return '/'.join(args)
 
     def isdir(self, dir):
         return dir in self.dirs
+
+    def getmtime(self, f):
+        return self._mtimes.get(f, 10000)
 
 
 class FakeOsModule(object):
@@ -223,11 +230,10 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import Maildir
         m = Maildir('/path/to/maildir')
         messages = list(m)
-        messages.sort()
-        self.assertEquals(messages, ['/path/to/maildir/cur/1',
-                                     '/path/to/maildir/cur/2',
-                                     '/path/to/maildir/new/1',
-                                     '/path/to/maildir/new/2'])
+        self.assertEquals(messages, ['/path/to/maildir/cur/2',
+                                     '/path/to/maildir/cur/1',
+                                     '/path/to/maildir/new/2',
+                                     '/path/to/maildir/new/1'])
 
     def test_newMessage(self):
         from zope.sendmail.maildir import Maildir

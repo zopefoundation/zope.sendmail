@@ -10,6 +10,9 @@ CHANGES
   is similar to the optional security support introduced in ``zope.component``
   3.8.0, and in fact it uses the same helpers.
 
+- Sort by modification time the messages in zope.sendmail.maildir so earlier
+  messages are sent before later messages during queue processing.
+
 3.6.1 (2009-11-16)
 ------------------
 
