@@ -13,6 +13,10 @@ CHANGES
 - Sort by modification time the messages in zope.sendmail.maildir so earlier
   messages are sent before later messages during queue processing.
 
+- Added the new parameter ``processorThread`` to the queuedDelivery ZCML
+  directive: if False, the QueueProcessorThread is not started and thus an
+  independent process must process the queue; it defaults to True for b/c.
+
 3.6.1 (2009-11-16)
 ------------------
 

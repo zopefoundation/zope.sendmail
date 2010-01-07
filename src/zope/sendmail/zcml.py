@@ -22,7 +22,7 @@ from zope.component.zcml import handler
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
-from zope.schema import TextLine, BytesLine, Int
+from zope.schema import TextLine, BytesLine, Int, Bool
 
 from zope.sendmail.delivery import QueuedMailDelivery, DirectMailDelivery
 from zope.sendmail.delivery import QueueProcessorThread
@@ -76,7 +76,16 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
         description=u"Defines the path for the queue directory.",
         required=True)
 
-def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail"):
+    processorThread = Bool(
+        title=u"Run Queue Processor Thread",
+        description=u"Indicates whether to run queue processor in a thread "
+            "in this process.",
+        required=False,
+        default=True)
+
+
+def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
+    processorThread=True):
 
     def createQueuedDelivery():
         delivery = QueuedMailDelivery(queuePath)
@@ -89,10 +98,11 @@ def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail"):
         if mailerObject is None:
             raise ConfigurationError("Mailer %r is not defined" %mailer)
 
-        thread = QueueProcessorThread()
-        thread.setMailer(mailerObject)
-        thread.setQueuePath(queuePath)
-        thread.start()
+        if processorThread:
+            thread = QueueProcessorThread()
+            thread.setMailer(mailerObject)
+            thread.setQueuePath(queuePath)
+            thread.start()
 
     _context.action(
             discriminator = ('delivery', name),
