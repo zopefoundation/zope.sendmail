@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.6.2 (unreleased)
+3.7.0 (unreleased)
 ------------------
 
 - Removed dependency on ``zope.security``: the security support is optional,
@@ -16,6 +16,10 @@ CHANGES
 - Added the new parameter ``processorThread`` to the queuedDelivery ZCML
   directive: if False, the QueueProcessorThread is not started and thus an
   independent process must process the queue; it defaults to True for b/c.
+
+- Provide a console script ``zope-sendmail`` which can be used to process the
+  delivery queue in case processorThread is False. The console script can
+  either process the messages in the queue once, or run in "daemon" mode.
 
 3.6.1 (2009-11-16)
 ------------------

@@ -54,4 +54,8 @@ setup(name='zope.sendmail',
                        ],
       include_package_data = True,
       zip_safe = False,
+      entry_points="""
+      [console_scripts]
+      zope-sendmail = zope.sendmail.queue:run
+      """
       )
