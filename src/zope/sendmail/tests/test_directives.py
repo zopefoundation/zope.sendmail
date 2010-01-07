@@ -29,8 +29,8 @@ from zope.interface import implements
 
 from zope.sendmail.interfaces import \
      IMailDelivery, IMailer, ISMTPMailer
-from zope.sendmail.delivery import QueueProcessorThread
 from zope.sendmail import delivery
+from zope.sendmail.queue import QueueProcessorThread
 import zope.sendmail.tests
 
 

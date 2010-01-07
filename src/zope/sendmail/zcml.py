@@ -25,9 +25,9 @@ from zope.interface import Interface
 from zope.schema import TextLine, BytesLine, Int, Bool
 
 from zope.sendmail.delivery import QueuedMailDelivery, DirectMailDelivery
-from zope.sendmail.delivery import QueueProcessorThread
 from zope.sendmail.interfaces import IMailer, IMailDelivery
 from zope.sendmail.mailer import SMTPMailer
+from zope.sendmail.queue import QueueProcessorThread
 
 try:
     from zope.component.security import proxify
