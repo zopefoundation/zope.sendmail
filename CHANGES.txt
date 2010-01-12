@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.7.0 (unreleased)
+3.7.0 (2010-01-12)
 ------------------
 
 - Removed dependency on ``zope.security``: the security support is optional,
