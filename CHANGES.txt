@@ -2,10 +2,11 @@
 CHANGES
 =======
 
-3.7.1 (unreleased)
+3.7.1 (2010-01-13)
 ------------------
 
-- ...
+- Backward compatibility import of zope.sendmail.queue.QueueProcessorThread in
+  zope.sendmail.delivery.
 
 3.7.0 (2010-01-12)
 ------------------

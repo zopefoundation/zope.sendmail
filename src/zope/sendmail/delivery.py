@@ -32,6 +32,9 @@ from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
 import transaction
 
+# BBB: this import is needed for backward compatibility with older versions of
+# zope.sendmail which defined QueueProcessorThread in this module
+from zope.sendmail.queue import QueueProcessorThread
 
 class MailDataManager(object):
     implements(IDataManager)
