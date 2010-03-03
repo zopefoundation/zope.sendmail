@@ -5,7 +5,8 @@ CHANGES
 3.7.2 (unreleased)
 ------------------
 
-- ...
+- Maildir storage for queue can now handle unicode passed in for message or
+  to/from addresses (change backported from repoze.sendmail).
 
 3.7.1 (2010-01-13)
 ------------------
