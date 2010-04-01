@@ -20,9 +20,9 @@ $Id$
 
 import smtplib
 from unittest import TestCase, TestSuite, makeSuite, main
+import doctest
 
 import transaction
-from zope.testing import doctest
 from zope.interface import implements
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import IMailer

@@ -8,6 +8,8 @@ CHANGES
 - Maildir storage for queue can now handle unicode passed in for message or
   to/from addresses (change backported from repoze.sendmail).
 
+- Tests use stdlib doctest instead of zope.testing.doctest.
+
 3.7.1 (2010-01-13)
 ------------------
 
