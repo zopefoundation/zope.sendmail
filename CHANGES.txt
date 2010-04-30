@@ -5,6 +5,8 @@ CHANGES
 3.7.2 (unreleased)
 ------------------
 
+- Removed no longer required testing dependency on zope.testing.
+
 - Maildir storage for queue can now handle unicode passed in for message or
   to/from addresses (change backported from repoze.sendmail).
 
