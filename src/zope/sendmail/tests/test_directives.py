@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Test the gts ZCML namespace directives.
-
-$Id$
 """
 import os
 import shutil

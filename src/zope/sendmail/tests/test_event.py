@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Mailer Events Tests
-
-$Id$
 """
 from unittest import TestCase, TestSuite, makeSuite
 

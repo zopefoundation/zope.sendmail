@@ -14,8 +14,6 @@
 """Mail Delivery utility implementation
 
 This module contains various implementations of `MailDeliverys`.
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

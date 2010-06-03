@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Collection of possible Mail Events.
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

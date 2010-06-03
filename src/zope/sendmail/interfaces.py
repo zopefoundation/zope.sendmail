@@ -49,8 +49,6 @@ Email sending from Zope 3 applications works as follows:
 - If mail delivery succeeds, an `IMailSentEvent` is dispatched by the mailer.
   If mail delivery fails, no exceptions are raised, but an `IMailErrorEvent` is
   dispatched by the mailer.
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

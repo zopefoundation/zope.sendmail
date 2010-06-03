@@ -14,8 +14,6 @@
 """Mail Delivery Tests
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
-
-$Id$
 """
 
 import smtplib

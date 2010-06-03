@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Read/write access to `Maildir` folders.
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

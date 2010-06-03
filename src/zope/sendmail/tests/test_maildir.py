@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Unit tests for zope.sendmail.maildir module
-
-$Id$
 """
 
 import unittest

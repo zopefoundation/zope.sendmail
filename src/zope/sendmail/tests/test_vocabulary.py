@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """Mail delivery names vocabulary test
-
-$Id$
 """
 import unittest
 from doctest import DocTestSuite

@@ -12,8 +12,6 @@
 #
 ##############################################################################
 """'mail' ZCML Namespaces Schemas
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

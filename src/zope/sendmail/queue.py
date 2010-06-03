@@ -14,8 +14,6 @@
 """Queue processor thread
 
 This module contains the queue processor thread.
-
-$Id$
 """
 __docformat__ = 'restructuredtext'
 

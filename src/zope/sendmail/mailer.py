@@ -11,11 +11,7 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-
-"""These are classes which abstract different channels an email
-message could be sent out by.
-
-$Id$
+"""Classes which abstract different channels a message could be sent to.
 """
 __docformat__ = 'restructuredtext'
 
