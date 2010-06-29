@@ -136,11 +136,18 @@ class IMailer(Interface):
         2822.  It should contain at least Date, From, To, and Message-Id
         headers.
 
-        Messages are sent immediatelly.
+        Messages are sent immediately.
 
         Dispatches an `IMailSentEvent` on successful delivery, otherwise an
         `IMailErrorEvent`.
         """
+    
+    def abort():
+        """Abort sending the message for asynchronous subclasses."""
+    
+    def vote(fromaddr, toaddrs, message):
+        """Raise an exception if there is a known reason why the message 
+        cannot be sent."""
 
 
 class ISMTPMailer(IMailer):

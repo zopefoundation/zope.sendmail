@@ -37,17 +37,38 @@ class SMTPMailer(object):
         self.password = password
         self.force_tls = force_tls
         self.no_tls = no_tls
+        self.connection = None
 
-    def send(self, fromaddr, toaddrs, message):
-        connection = self.smtp(self.hostname, str(self.port))
+    def vote(self, fromaddr, toaddrs, message):
+        self.connection = self.smtp(self.hostname, str(self.port))
 
-        # send EHLO
-        code, response = connection.ehlo()
+        code, response = self.connection.ehlo()
         if code < 200 or code >= 300:
-            code, response = connection.helo()
+            code, response = self.connection.helo()
             if code < 200 or code >= 300:
                 raise RuntimeError('Error sending HELO to the SMTP server '
                                    '(code=%s, response=%s)' % (code, response))
+        
+        self.code, self.response = code, response
+
+
+    def abort(self):
+        if self.connection is None:
+            return
+        
+        try:
+            self.connection.quit()
+        except socket.sslerror:
+            #something weird happened while quiting
+            self.connection.close()
+
+    def send(self, fromaddr, toaddrs, message):
+        connection = getattr(self, 'connection', None)
+        if connection is None:
+            self.vote(fromaddr, toaddrs, message)
+
+        connection, code, response = self.connection, self.code, self.response
+            
 
         # encryption support
         have_tls =  connection.has_extn('starttls')

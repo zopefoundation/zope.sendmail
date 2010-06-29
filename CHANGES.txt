@@ -2,9 +2,13 @@
 CHANGES
 =======
 
-3.7.3 (unreleased)
+3.8.0 (unreleased)
 ------------------
 
+- Add a vote method to Mailer implementations to allow them to abort a
+  transaction if it is known to be unsafe.
+
+- Prevent fatal errors in mail delivery causing potential database corruption.
 
 3.7.2 (2010-04-30)
 ------------------

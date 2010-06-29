@@ -19,6 +19,8 @@ __docformat__ = 'restructuredtext'
 
 import os
 import rfc822
+import logging
+import warnings
 from cStringIO import StringIO
 from random import randrange
 from time import strftime
@@ -34,12 +36,15 @@ import transaction
 # zope.sendmail which defined QueueProcessorThread in this module
 from zope.sendmail.queue import QueueProcessorThread
 
+log = logging.getLogger("MailDataManager")
+
 class MailDataManager(object):
     implements(IDataManager)
 
-    def __init__(self, callable, args=(), onAbort=None):
+    def __init__(self, callable, args=(), vote=None, onAbort=None):
         self.callable = callable
         self.args = args
+        self.vote = vote
         self.onAbort = onAbort
         # Use the default thread transaction manager.
         self.transaction_manager = transaction.manager
@@ -69,10 +74,18 @@ class MailDataManager(object):
         assert not subtransaction
 
     def tpc_vote(self, transaction):
-        pass
+        if self.vote is not None:
+            return self.vote(*self.args)
 
     def tpc_finish(self, transaction):
-        self.callable(*self.args)
+        try:
+            self.callable(*self.args)
+        except Exception, e:
+            # Any exceptions here can cause database corruption.
+            # Better to protect the data and potentially miss emails than
+            # leave a database in an inconsistent state which requires a
+            # guru to fix.
+            log.exception(e)
 
     tpc_abort = abort
 
@@ -111,8 +124,20 @@ class DirectMailDelivery(AbstractMailDelivery):
         self.mailer = mailer
 
     def createDataManager(self, fromaddr, toaddrs, message):
+        try:
+            vote = self.mailer.vote
+        except AttributeError:
+            # We've got an old mailer, just pass through voting
+            warnings.warn("The mailer %s does not provide a vote method" 
+                                    % (repr(self.mailer)), DeprecationWarning)
+            
+            def vote(*args, **kwargs):
+                pass
+            
         return MailDataManager(self.mailer.send,
-                               args=(fromaddr, toaddrs, message))
+                               args=(fromaddr, toaddrs, message),
+                               vote=vote,
+                               onAbort=self.mailer.abort)
 
 
 class QueuedMailDelivery(AbstractMailDelivery):
