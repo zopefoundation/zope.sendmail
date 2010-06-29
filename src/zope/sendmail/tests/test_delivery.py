@@ -34,6 +34,9 @@ class MailerStub(object):
 
     def send(self, fromaddr, toaddrs, message):
         self.sent_messages.append((fromaddr, toaddrs, message))
+    
+    abort = None
+    vote = None
 
 
 class TestMailDataManager(TestCase):
@@ -137,7 +140,59 @@ class TestDirectMailDelivery(TestCase):
         self.assertEquals(mailer.sent_messages, [])
         transaction.abort()
         self.assertEquals(mailer.sent_messages, [])
+    
+    def testBrokenMailerErrorsAreEaten(self):
+        from zope.sendmail.delivery import DirectMailDelivery
+        mailer = BrokenMailerStub()
+        delivery = DirectMailDelivery(mailer)
+        fromaddr = 'Jim <jim@example.com'
+        toaddrs = ('Guido <guido@example.com>',
+                   'Steve <steve@examplecom>')
+        opt_headers = ('From: Jim <jim@example.org>\n'
+                       'To: some-zope-coders:;\n'
+                       'Date: Mon, 19 May 2003 10:17:36 -0400\n'
+                       'Message-Id: <20030519.1234@example.org>\n')
+        message =     ('Subject: example\n'
+                       '\n'
+                       'This is just an example\n')
 
+        msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
+        try:
+            transaction.commit()
+        finally:
+            # Clean up after ourselves
+            transaction.abort()
+    
+    def testRefusingMailerDiesInVote(self):
+        from zope.sendmail.delivery import DirectMailDelivery
+        mailer = RefusingMailerStub()
+        delivery = DirectMailDelivery(mailer)
+        fromaddr = 'Jim <jim@example.com'
+        toaddrs = ('Guido <guido@example.com>',
+                   'Steve <steve@examplecom>')
+        opt_headers = ('From: Jim <jim@example.org>\n'
+                       'To: some-zope-coders:;\n'
+                       'Date: Mon, 19 May 2003 10:17:36 -0400\n'
+                       'Message-Id: <20030519.1234@example.org>\n')
+        message =     ('Subject: example\n'
+                       '\n'
+                       'This is just an example\n')
+
+        msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
+        try:
+            transaction.commit()
+        except:
+            if transaction.get()._voted:
+                # We voted for commit then failed, reraise
+                raise
+            else:
+                # We vetoed a commit, that's good.
+                pass
+        else:
+            self.fail("Did not raise an exception in vote")
+        finally:
+            # Clean up after ourselves
+            transaction.abort()
 
 class MaildirWriterStub(object):
 
@@ -219,7 +274,24 @@ class BrokenMailerStub(object):
 
     def send(self, fromaddr, toaddrs, message):
         raise BizzarreMailError("bad things happened while sending mail")
+    
+    vote = None
+    abort = None
 
+
+class RefusingMailerStub(object):
+
+    implements(IMailer)
+    def __init__(self, *args, **kw):
+        pass
+
+    def vote(self, fromaddr, toaddrs, message):
+        raise BizzarreMailError("bad things happened while sending mail")
+
+    def send(self, fromaddr, toaddrs, message):
+        return
+
+    abort = None
 
 class SMTPResponseExceptionMailerStub(object):
 
