@@ -180,16 +180,17 @@ class TestDirectMailDelivery(TestCase):
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         try:
-            transaction.commit()
-        except:
-            if transaction.get()._voted:
-                # We voted for commit then failed, reraise
-                raise
+            try:
+                transaction.commit()
+            except:
+                if transaction.get()._voted:
+                    # We voted for commit then failed, reraise
+                    raise
+                else:
+                    # We vetoed a commit, that's good.
+                    pass
             else:
-                # We vetoed a commit, that's good.
-                pass
-        else:
-            self.fail("Did not raise an exception in vote")
+                self.fail("Did not raise an exception in vote")
         finally:
             # Clean up after ourselves
             transaction.abort()
