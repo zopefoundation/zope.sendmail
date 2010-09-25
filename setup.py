@@ -16,9 +16,15 @@
 # When developing and releasing this package, please follow the documented
 # Zope Toolkit policies as described by this documentation.
 ##############################################################################
-"""Setup for zope.sendmail package
-"""
+"""Setup for zope.sendmail package"""
+
 from setuptools import setup, find_packages
+
+
+tests_require=[
+    'zope.security',
+    'zope.component [test]',
+    ]
 
 
 setup(name='zope.sendmail',
@@ -35,14 +41,14 @@ setup(name='zope.sendmail',
       packages=find_packages('src'),
       package_dir={'': 'src'},
       namespace_packages=['zope',],
-      tests_require=['zope.security'],
-      extras_require=dict(test=['zope.security']),
+      tests_require=tests_require,
+      extras_require=dict(test=tests_require),
       install_requires=['setuptools',
                         'transaction',
                         'zope.i18nmessageid',
                         'zope.interface',
                         'zope.schema',
-                        # it's only needed for vocabulary and zcml
+                        # it's only needed for vocabulary, zcml and tests
                         'zope.component>=3.8.0',
                         # these are only needed for zcml
                         'zope.configuration',

@@ -10,6 +10,8 @@ CHANGES
 
 - Prevent fatal errors in mail delivery causing potential database corruption.
 
+- Added not declared, but needed test dependency on `zope.component [test]`.
+
 3.7.2 (2010-04-30)
 ------------------
 
