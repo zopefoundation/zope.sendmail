@@ -112,6 +112,30 @@ class TestSMTPMailer(unittest.TestCase):
         self.assert_(self.smtp.quitted)
         self.assert_(self.smtp.closed)
 
+    def test_send_auth_unicode(self):
+        fromaddr = 'me@example.com'
+        toaddrs = ('you@example.com', 'him@example.com')
+        msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
+        self.mailer.username = u'f\u00f8\u00f8' # double o slash
+        self.mailer.password = u'\u00e9vil' # e acute
+        self.mailer.hostname = 'spamrelay'
+        self.mailer.port = 31337
+        self.mailer.send(fromaddr, toaddrs, msgtext)
+        self.assertEquals(self.smtp.username, 'f\xc3\xb8\xc3\xb8')
+        self.assertEquals(self.smtp.password, '\xc3\xa9vil')
+
+    def test_send_auth_nonascii(self):
+        fromaddr = 'me@example.com'
+        toaddrs = ('you@example.com', 'him@example.com')
+        msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
+        self.mailer.username = 'f\xc3\xb8\xc3\xb8' # double o slash
+        self.mailer.password = '\xc3\xa9vil' # e acute
+        self.mailer.hostname = 'spamrelay'
+        self.mailer.port = 31337
+        self.mailer.send(fromaddr, toaddrs, msgtext)
+        self.assertEquals(self.smtp.username, 'f\xc3\xb8\xc3\xb8')
+        self.assertEquals(self.smtp.password, '\xc3\xa9vil')
+
     def test_send_failQuit(self):
         self.mailer.smtp.fail_on_quit = True
         try:
@@ -161,6 +185,9 @@ class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
         # This test requires ESMTP, which we're intentionally not enabling
         # here, so pass.
         pass
+
+    test_send_auth_unicode = test_send_auth
+    test_send_auth_nonascii = test_send_auth
 
 def test_suite():
     suite = unittest.TestSuite()

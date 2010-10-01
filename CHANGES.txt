@@ -4,6 +4,9 @@ Change history
 3.5.2 (unreleased)
 ------------------
 
+- Handle unicode usernames and passwords, encoding them to UTF-8. Fix for
+  https://bugs.launchpad.net/zope.sendmail/+bug/597143
+
 
 3.5.1 (2009-01-26)
 ------------------
