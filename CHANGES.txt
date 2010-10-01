@@ -2,18 +2,16 @@
 CHANGES
 =======
 
-3.7.4 (unreleased)
+3.7.4 (2010-10-01)
 ------------------
 
 - Handle unicode usernames and passwords, encoding them to UTF-8. Fix for
   https://bugs.launchpad.net/zope.sendmail/+bug/597143
 
-
 3.7.3 (2010-09-25)
 ------------------
 
 - Added not declared, but needed test dependency on `zope.component [test]`.
-
 
 3.7.2 (2010-04-30)
 ------------------
