@@ -81,7 +81,12 @@ class SMTPMailer(object):
 
         if connection.does_esmtp:
             if self.username is not None and self.password is not None:
-                connection.login(self.username, self.password)
+                username, password = self.username, self.password
+                if isinstance(username, unicode):
+                    username = username.encode('utf-8')
+                if isinstance(password, unicode):
+                    password = password.encode('utf-8')
+                connection.login(username, password)
         elif self.username:
             raise RuntimeError('Mailhost does not support ESMTP but a username '
                                 'is configured')
