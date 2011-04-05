@@ -1,7 +1,7 @@
 Change history
 ~~~~~~~~~~~~~~
 
-3.5.3 (unreleased)
+3.5.3 (2011-04-05)
 ------------------
 
 - Work around problem when used with Python >=2.5.1.  See
