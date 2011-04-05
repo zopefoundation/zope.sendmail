@@ -4,6 +4,8 @@ Change history
 3.5.3 (unreleased)
 ------------------
 
+- Work around problem when used with Python >=2.5.1.  See
+  https://bugs.edge.launchpad.net/zope.sendmail/+bug/413335.
 
 3.5.2 (2010-10-01)
 ------------------
