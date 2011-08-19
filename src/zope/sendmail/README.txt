@@ -46,7 +46,7 @@ an IMailDelivery utility in your site.zcml with a configuration directive::
             name="my-app.mailer"
             permission="zope.Public"
             mailer="smtp"
-            queuepath="var/mailqueue"
+            queuePath="var/mailqueue"
             />
 
     </configure>
