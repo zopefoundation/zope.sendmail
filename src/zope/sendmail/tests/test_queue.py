@@ -42,6 +42,10 @@ class TestQueueProcessorThread(TestCase):
     def tearDown(self):
         shutil.rmtree(self.dir)
 
+    def test_threadName(self):
+        self.assertEquals(self.thread.name,
+                          "zope.sendmail.queue.QueueProcessorThread")
+
     def test_parseMessage(self):
         hdr = ('X-Zope-From: foo@example.com\n'
                'X-Zope-To: bar@example.com, baz@example.com\n')

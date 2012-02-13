@@ -105,7 +105,8 @@ class QueueProcessorThread(threading.Thread):
     interval = 3.0   # process queue every X second
 
     def __init__(self, interval=3.0):
-        threading.Thread.__init__(self)
+        threading.Thread.__init__(self,
+                name="zope.sendmail.queue.QueueProcessorThread")
         self.interval = interval
         self._lock = threading.Lock()
         self.setDaemon(True)
