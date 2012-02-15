@@ -43,7 +43,7 @@ class TestQueueProcessorThread(TestCase):
         shutil.rmtree(self.dir)
 
     def test_threadName(self):
-        self.assertEquals(self.thread.name,
+        self.assertEquals(self.thread.getName(),
                           "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
