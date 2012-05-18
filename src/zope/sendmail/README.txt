@@ -102,8 +102,8 @@ Obviously, you don't want your automated unit/functional test runs to send
 real emails.  You'll have to define a fake email delivery utility in your
 test layer.  Something like this will do the trick::
 
+    @implements(IMailDelivery)
     class FakeMailDelivery(object):
-        implements(IMailDelivery)
 
         def send(self, source, dest, body):
             print "*** Sending email from %s to %s:" % (source, dest)

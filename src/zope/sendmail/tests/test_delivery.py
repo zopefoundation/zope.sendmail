@@ -21,14 +21,14 @@ from unittest import TestCase, TestSuite, makeSuite, main
 import doctest
 
 import transaction
-from zope.interface import implements
+from zope.interface import implementer
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import IMailer
 
 
+@implementer(IMailer)
 class MailerStub(object):
 
-    implements(IMailer)
     def __init__(self, *args, **kw):
         self.sent_messages = []
 
@@ -267,9 +267,9 @@ class BizzarreMailError(IOError):
     pass
 
 
+@implementer(IMailer)
 class BrokenMailerStub(object):
 
-    implements(IMailer)
     def __init__(self, *args, **kw):
         pass
 
@@ -280,9 +280,9 @@ class BrokenMailerStub(object):
     abort = None
 
 
+@implementer(IMailer)
 class RefusingMailerStub(object):
 
-    implements(IMailer)
     def __init__(self, *args, **kw):
         pass
 
@@ -294,9 +294,9 @@ class RefusingMailerStub(object):
 
     abort = None
 
+@implementer(IMailer)
 class SMTPResponseExceptionMailerStub(object):
 
-    implements(IMailer)
     def __init__(self, code):
         self.code = code
 

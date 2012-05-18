@@ -26,7 +26,7 @@ from random import randrange
 from time import strftime
 from socket import gethostname
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.sendmail.interfaces import IDirectMailDelivery, IQueuedMailDelivery
 from zope.sendmail.maildir import Maildir
 from transaction.interfaces import IDataManager
@@ -38,8 +38,8 @@ from zope.sendmail.queue import QueueProcessorThread
 
 log = logging.getLogger("MailDataManager")
 
+@implementer(IDataManager)
 class MailDataManager(object):
-    implements(IDataManager)
 
     def __init__(self, callable, args=(), vote=None, onAbort=None):
         self.callable = callable
@@ -115,10 +115,9 @@ class AbstractMailDelivery(object):
         return messageid
 
 
+@implementer(IDirectMailDelivery)
 class DirectMailDelivery(AbstractMailDelivery):
     __doc__ = IDirectMailDelivery.__doc__
-
-    implements(IDirectMailDelivery)
 
     def __init__(self, mailer):
         self.mailer = mailer
@@ -140,10 +139,9 @@ class DirectMailDelivery(AbstractMailDelivery):
                                onAbort=self.mailer.abort)
 
 
+@implementer(IQueuedMailDelivery)
 class QueuedMailDelivery(AbstractMailDelivery):
     __doc__ = IQueuedMailDelivery.__doc__
-
-    implements(IQueuedMailDelivery)
 
     def __init__(self, queuePath):
         self._queuePath = queuePath

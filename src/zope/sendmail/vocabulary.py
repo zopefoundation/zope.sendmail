@@ -26,9 +26,10 @@ def MailDeliveryNames(context=None):
 
     Let's provide a few stub utilities:
 
-      >>> from zope.interface import implements
-      >>> class StubMailDelivery(object):
-      ...     implements(IMailDelivery)
+      >>> from zope.interface import implementer
+      >>> @implementer(IMailDelivery)
+      ... class StubMailDelivery(object):
+      ...     pass
 
       >>> from zope.component import provideUtility
       >>> for name in 'and now for something completely different'.split():

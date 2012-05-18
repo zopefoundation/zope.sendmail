@@ -21,17 +21,16 @@ import socket
 import time
 import random
 
-from zope.interface import implements, classProvides
+from zope.interface import implementer, provider
 
 from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
 
 
+@provider(IMaildirFactory)
+@implementer(IMaildir)
 class Maildir(object):
     """See `zope.sendmail.interfaces.IMaildir`"""
-
-    classProvides(IMaildirFactory)
-    implements(IMaildir)
 
     def __init__(self, path, create=False):
         "See `zope.sendmail.interfaces.IMaildirFactory`"
@@ -118,10 +117,10 @@ def _encode_utf8(s):
     return s
 
 
+@implementer(IMaildirMessageWriter)
 class MaildirMessageWriter(object):
     """See `zope.sendmail.interfaces.IMaildirMessageWriter`"""
 
-    implements(IMaildirMessageWriter)
 
     def __init__(self, fd, filename, new_filename):
         self._filename = filename

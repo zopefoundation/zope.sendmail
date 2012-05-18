@@ -18,14 +18,14 @@ __docformat__ = 'restructuredtext'
 import socket
 from smtplib import SMTP
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.sendmail.interfaces import ISMTPMailer
 
 have_ssl = hasattr(socket, 'ssl')
 
+@implementer(ISMTPMailer)
 class SMTPMailer(object):
 
-    implements(ISMTPMailer)
 
     smtp = SMTP
 

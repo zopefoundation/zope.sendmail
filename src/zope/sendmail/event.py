@@ -15,24 +15,22 @@
 """
 __docformat__ = 'restructuredtext'
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from zope.sendmail.interfaces import IMailSentEvent, IMailErrorEvent
 
 
+@implementer(IMailSentEvent)
 class MailSentEvent(object):
     __doc__ = IMailSentEvent.__doc__
-
-    implements(IMailSentEvent)
 
     def __init__(self, messageId):
         self.messageId = messageId
 
 
+@implementer(IMailErrorEvent)
 class MailErrorEvent(object):
     __doc__ = IMailErrorEvent.__doc__
-
-    implements(IMailErrorEvent)
 
     def __init__(self, messageId, errorMessage):
         self.messageId = messageId

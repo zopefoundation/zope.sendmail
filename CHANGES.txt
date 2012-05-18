@@ -2,20 +2,28 @@
 CHANGES
 =======
 
-3.8.0 (unreleased)
+4.0.0 (unreleased)
 ------------------
 
-- Add a vote method to Mailer implementations to allow them to abort a
+- Replaced deprecated ``zope.interface.classProvides`` usage with equivalent
+  ``zope.interface.provider`` decorator.
+
+- Replaced deprecated ``zope.interface.implements`` usage with equivalent
+  ``zope.interface.implementer`` decorator.
+
+- Dropped support for Python 2.4 and 2.5.
+
+- Added a vote method to Mailer implementations to allow them to abort a
   transaction if it is known to be unsafe.
 
-- Prevent fatal errors in mail delivery causing potential database corruption.
+- Prevented fatal errors in mail delivery causing potential database corruption.
 
 - Added not declared, but needed test dependency on `zope.component [test]`.
 
-- Handle unicode usernames and passwords, encoding them to UTF-8. Fix for
-  https://bugs.launchpad.net/zope.sendmail/+bug/597143
+- Added handling for unicode usernames and passwords, encoding them to UTF-8.
+  Fix for https://bugs.launchpad.net/zope.sendmail/+bug/597143
 
-- Give the background queue processor thread a name.
+- Gave the background queue processor thread a name.
 
 3.7.2 (2010-04-30)
 ------------------

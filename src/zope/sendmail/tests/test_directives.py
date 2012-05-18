@@ -23,7 +23,7 @@ import time
 import zope.component
 from zope.component.testing import PlacelessSetup
 from zope.configuration import xmlconfig
-from zope.interface import implements
+from zope.interface import implementer
 
 from zope.sendmail.interfaces import \
      IMailDelivery, IMailer, ISMTPMailer
@@ -44,8 +44,9 @@ class MaildirStub(object):
     def newMessage(self):
         return None
 
+@implementer(IMailer)
 class Mailer(object):
-    implements(IMailer)
+    pass
 
 
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
