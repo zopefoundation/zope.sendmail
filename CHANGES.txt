@@ -5,13 +5,6 @@ CHANGES
 4.0.0 (unreleased)
 ------------------
 
-- Ensured that the 'queuedDelivery' directive has the same discriminator
-  as the 'directDelivery' directive (they are mutually incompatible).
-  https://bugs.launchpad.net/zope.sendmail/+bug/191143
-
-- Avoid requeuing messages after an SMTP "recipients refused" error.
-  https://bugs.launchpad.net/zope.sendmail/+bug/1003288
-
 - Replaced deprecated ``zope.interface.classProvides`` usage with equivalent
   ``zope.interface.provider`` decorator.
 
@@ -31,6 +24,16 @@ CHANGES
   Fix for https://bugs.launchpad.net/zope.sendmail/+bug/597143
 
 - Gave the background queue processor thread a name.
+
+3.7.5 (2012-05-23)
+------------------
+
+- Ensured that the 'queuedDelivery' directive has the same discriminator
+  as the 'directDelivery' directive (they are mutually incompatible).
+  https://bugs.launchpad.net/zope.sendmail/+bug/191143
+
+- Avoid requeuing messages after an SMTP "recipients refused" error.
+  https://bugs.launchpad.net/zope.sendmail/+bug/1003288
 
 3.7.4 (2010-10-01)
 ------------------
