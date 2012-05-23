@@ -25,6 +25,17 @@ CHANGES
 
 - Gave the background queue processor thread a name.
 
+3.7.4 (2010-10-01)
+------------------
+
+- Handle unicode usernames and passwords, encoding them to UTF-8. Fix for
+  https://bugs.launchpad.net/zope.sendmail/+bug/597143
+
+3.7.3 (2010-09-25)
+------------------
+
+- Added not declared, but needed test dependency on `zope.component [test]`.
+
 3.7.2 (2010-04-30)
 ------------------
 
@@ -100,7 +111,6 @@ CHANGES
 - If the SMTP server rejects a message (for example, when the sender or
   recipient address is malformed), that email stays in the queue forever
   (https://bugs.launchpad.net/zope3/+bug/157104).
-
 
 3.5.0b1 (2007-11-08)
 --------------------
