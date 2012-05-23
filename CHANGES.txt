@@ -5,6 +5,12 @@ CHANGES
 4.0.0 (unreleased)
 ------------------
 
+- Deleted event fossils (interfaces ``zope.sendmail.interfaces.IMailSent`` and
+  ``zope.sendmail.interfaces.IMailError``. plus the ``zope.sendmail.events``
+  module and associated tests).  These events were never emitted, and couldn't
+  have been used safely even if they had been, due to two-phase commit.
+  https://bugs.launchpad.net/zope3/+bug/177739 
+
 - Replaced deprecated ``zope.interface.classProvides`` usage with equivalent
   ``zope.interface.provider`` decorator.
 

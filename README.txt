@@ -40,7 +40,3 @@ encapsulates the delivery process.  There currently is only one
 mailer:
 
 ``ISMTPMailer`` sends all messages to a relay host using SMTP.
-
-If mail delivery succeeds, an ``IMailSentEvent`` is dispatched by the
-mailer.  If mail delivery fails, no exceptions are raised, but an
-`IMailErrorEvent` is dispatched by the mailer.

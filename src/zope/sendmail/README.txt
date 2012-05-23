@@ -122,6 +122,3 @@ Problems with zope.sendmail
   formatting by yourself).
 
 * The configuration should be done in zope.conf, not in ZCML.
-
-* The IMailSentEvent and IMailErrorEvent events aren't used and can't be used
-  (you don't want to send emails during the commit phase).

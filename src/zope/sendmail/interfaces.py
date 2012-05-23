@@ -45,10 +45,6 @@ Email sending from Zope 3 applications works as follows:
   delivery process.  There currently is only one mailer:
 
     - `ISMTPMailer` sends all messages to a relay host using SMTP
-
-- If mail delivery succeeds, an `IMailSentEvent` is dispatched by the mailer.
-  If mail delivery fails, no exceptions are raised, but an `IMailErrorEvent` is
-  dispatched by the mailer.
 """
 __docformat__ = 'restructuredtext'
 
@@ -137,9 +133,6 @@ class IMailer(Interface):
         headers.
 
         Messages are sent immediately.
-
-        Dispatches an `IMailSentEvent` on successful delivery, otherwise an
-        `IMailErrorEvent`.
         """
     
     def abort():
@@ -177,28 +170,6 @@ class ISMTPMailer(IMailer):
     force_tls = Bool(
         title=_(u"Force TLS"),
         description=_(u"Use TLS always for sending email."))
-
-
-class IMailEvent(Interface):
-    """Generic mail event."""
-
-    messageId = Attribute("Message id according to RFC 2822")
-
-
-class IMailSentEvent(IMailEvent):
-    """Event that is fired when a message is succesfully sent.
-
-    This does not mean that all the recipients have received it, it only
-    means that the message left this system successfully.  It is possible
-    that a bounce message will arrive later from some remote mail server.
-    """
-
-
-class IMailErrorEvent(IMailEvent):
-    """Event that is fired when a message cannot be delivered."""
-
-    errorMessage = Attribute("Error message")
-
 
 
 class IMaildirFactory(Interface):
