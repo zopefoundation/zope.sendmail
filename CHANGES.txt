@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.7.5 (unreleased)
+3.7.5 (2012-05-23)
 ------------------
 
 - Ensured that the 'queuedDelivery' directive has the same discriminator
