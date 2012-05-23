@@ -271,6 +271,12 @@ class QueueProcessorThread(threading.Thread):
                             else:
                                 # Log an error and retry later
                                 raise
+                        except smtplib.SMTPRecipientsRefused, e:
+                            # All recipients are refused by smtp
+                            # server. Dont try to redeliver the message.
+                            self.log.error("Email recipients refused: %s",
+                                           ', '.join(e.recipients))
+                            _os_link(filename, rejected_filename)
 
                         try:
                             os.unlink(filename)

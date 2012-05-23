@@ -5,6 +5,8 @@ CHANGES
 3.7.5 (unreleased)
 ------------------
 
+- Avoid requeuing messages after an SMTP "recipients refused" error.
+  https://bugs.launchpad.net/zope.sendmail/+bug/1003288
 
 3.7.4 (2010-10-01)
 ------------------

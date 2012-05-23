@@ -134,6 +134,27 @@ class TestQueueProcessorThread(TestCase):
                              'bar@example.com, baz@example.com',
                              "(550, 'Serious Error')"), {})])
 
+    def test_smtp_recipients_refused(self):
+        # Test a permanent error
+        self.thread.setMailer(SMTPRecipientsRefusedMailerStub(
+                               ['bar@example.com']))
+        self.filename = os.path.join(self.dir, 'message')
+        temp = open(self.filename, "w+b")
+        temp.write('X-Zope-From: foo@example.com\n'
+                   'X-Zope-To: bar@example.com, baz@example.com\n'
+                   'Header: value\n\nBody\n')
+        temp.close()
+        self.md.files.append(self.filename)
+        self.thread.run(forever=False)
+
+        # File must be moved aside
+        self.failIf(os.path.exists(self.filename))
+        self.failUnless(os.path.exists(os.path.join(self.dir,
+                                                    '.rejected-message')))
+        self.assertEquals(self.thread.log.errors,
+                          [('Email recipients refused: %s',
+                           ('bar@example.com',), {})])
+
 test_ini = """[app:zope-sendmail]
 interval = 33
 hostname = testhost
@@ -251,6 +272,16 @@ class TestConsoleApp(TestCase):
         self.assertEquals(None, app.password)
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
+
+
+class SMTPRecipientsRefusedMailerStub(object):
+
+    def __init__(self, recipients):
+        self.recipients = recipients
+
+    def send(self, fromaddr, toaddrs, message):
+        import smtplib
+        raise smtplib.SMTPRecipientsRefused(self.recipients)
 
 
 def test_suite():
