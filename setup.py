@@ -28,7 +28,7 @@ tests_require=[
 
 
 setup(name='zope.sendmail',
-      version='3.7.5',
+      version='3.7.5dev',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',

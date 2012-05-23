@@ -2,7 +2,7 @@
 CHANGES
 =======
 
-3.7.5 (2012-05-23)
+3.7.5 (unreleased)
 ------------------
 
 - Avoid requeuing messages after an SMTP "recipients refused" error.
