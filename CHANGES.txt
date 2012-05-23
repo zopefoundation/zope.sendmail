@@ -5,6 +5,10 @@ CHANGES
 4.0.0 (unreleased)
 ------------------
 
+- Ensured that the 'queuedDelivery' directive has the same discriminator
+  as the 'directDelivery' directive (they are mutually incompatible).
+  https://bugs.launchpad.net/zope.sendmail/+bug/191143
+
 - Avoid requeuing messages after an SMTP "recipients refused" error.
   https://bugs.launchpad.net/zope.sendmail/+bug/1003288
 
