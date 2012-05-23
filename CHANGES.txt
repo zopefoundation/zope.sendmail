@@ -5,6 +5,9 @@ CHANGES
 4.0.0 (unreleased)
 ------------------
 
+- Avoid requeuing messages after an SMTP "recipients refused" error.
+  https://bugs.launchpad.net/zope.sendmail/+bug/1003288
+
 - Replaced deprecated ``zope.interface.classProvides`` usage with equivalent
   ``zope.interface.provider`` decorator.
 
