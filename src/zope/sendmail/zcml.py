@@ -105,7 +105,7 @@ def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
             thread.start()
 
     _context.action(
-            discriminator = ('delivery', name),
+            discriminator = ('utility', IMailDelivery, name),
             callable = createQueuedDelivery,
             args = () )
 
