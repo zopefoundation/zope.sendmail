@@ -20,6 +20,7 @@ __docformat__ = 'restructuredtext'
 import atexit
 import ConfigParser
 import logging
+import optparse
 import os
 import smtplib
 import stat
@@ -341,41 +342,36 @@ def string_or_none(s):
 class ConsoleApp(object):
     """Allows running of Queue Processor from the console."""
 
-    _usage = """%(script_name)s [OPTIONS] path/to/maildir
+    parser = optparse.OptionParser(usage='%prog [OPTIONS] path/to/maildir')
+    parser.add_option('--daemon', action='store_true',
+                      help="Run in daemon mode, periodically checking queue "
+                           "and sending messages.  Default is to send all "
+                           "messages in queue once and exit.")
+    parser.add_option('--interval', metavar='<#secs>', type='float', default=3,
+                      help="How often to check queue when in daemon mode. "
+                           "Default is %default seconds.")
+    parser.add_option('--hostname', default='localhost',
+                      help="Name of smtp host to use for delivery.  Default is "
+                           "%default.")
+    parser.add_option('--port', type='int', default=25,
+                      help="Which port on smtp server to deliver mail to. "
+                           "Default is %default.")
+    parser.add_option('--username',
+                      help="Username to use to log in to smtp server.  Default "
+                           "is none.")
+    parser.add_option('--password',
+                      help="Password to use to log in to smtp server.  Must be "
+                           "specified if username is specified.")
+    parser.add_option('--force-tls', action='store_true',
+                      help="Do not connect if TLS is not available.  Not "
+                           "enabled by default.")
+    parser.add_option('--no-tls', action='store_true',
+                      help="Do not use TLS even if is available.  Not enabled "
+                           "by default.")
+    parser.add_option('--config', metavar='<inifile>',
+                      help="Get configuration from specified ini file; it must "
+                           "contain a section [app:zope-sendmail].")
 
-    OPTIONS:
-
-        --daemon            Run in daemon mode, periodically checking queue
-                            and sending messages.  Default is to send all
-                            messages in queue once and exit.
-
-        --interval <#secs>  How often to check queue when in daemon mode.
-                            Default is 3 seconds.
-
-        --hostname          Name of smtp host to use for delivery.  Default is
-                            localhost.
-
-        --port              Which port on smtp server to deliver mail to.
-                            Default is 25.
-
-        --username          Username to use to log in to smtp server.  Default
-                            is none.
-
-        --password          Password to use to log in to smtp server.  Must be
-                            specified if username is specified.
-
-        --force-tls         Do not connect if TLS is not available.  Not
-                            enabled by default.
-
-        --no-tls            Do not use TLS even if is available.  Not enabled
-                            by default.
-
-        --config <inifile>  Get configuration from specified ini file; it must
-                            contain a section [app:zope-sendmail].
-
-    """
-
-    _error = False
     daemon = False
     interval = 3
     hostname = 'localhost'
@@ -386,7 +382,9 @@ class ConsoleApp(object):
     no_tls = False
     queue_path = None
 
-    def __init__(self, argv=sys.argv, verbose=True):
+    def __init__(self, argv=None, verbose=True):
+        if argv is None:
+            argv = sys.argv
         self.script_name = argv[0]
         self.verbose = verbose
         self._process_args(argv[1:])
@@ -394,66 +392,34 @@ class ConsoleApp(object):
             self.password, self.no_tls, self.force_tls)
 
     def main(self):
-        if self._error:
-            return
         queue = QueueProcessorThread(self.interval)
         queue.setMailer(self.mailer)
         queue.setQueuePath(self.queue_path)
         queue.run(forever=self.daemon)
 
     def _process_args(self, args):
-        got_queue_path = False
-        while args:
-            arg = args.pop(0)
-            if arg == "--daemon":
-                self.daemon = True
-            elif arg == "--interval":
-                try:
-                    self.interval = float(args.pop(0))
-                except:
-                    self._error_usage()
-            elif arg == "--hostname":
-                if not args:
-                    self._error_usage()
-                self.hostname = args.pop(0)
-            elif arg == "--port":
-                try:
-                    self.port = int(args.pop(0))
-                except:
-                    self._error_usage()
-            elif arg == "--username":
-                if not args:
-                    self._error_usage()
-                self.username = args.pop(0)
-            elif arg == "--password":
-                if not args:
-                    self._error_usage()
-                self.password = args.pop(0)
-            elif arg == "--force-tls":
-                self.force_tls = True
-            elif arg == "--no-tls":
-                self.no_tls = True
-            elif arg == "--config":
-                if not args:
-                    self._error_usage()
-                self._load_config(args.pop(0))
-            elif arg.startswith("-") or got_queue_path:
-                self._error_usage()
-            else:
-                self.queue_path = arg
-                got_queue_path = True
+        opts, args = self.parser.parse_args(args)
+        self.daemon = opts.daemon
+        self.interval = opts.interval
+        self.hostname = opts.hostname
+        self.port = opts.port
+        self.username = opts.username
+        self.password = opts.password
+        self.force_tls = opts.force_tls
+        self.no_tls = opts.no_tls
+        if opts.config:
+            self._load_config(opts.config)
+        if len(args) > 1:
+            self.parser.error('too many arguments')
+        elif args:
+            self.queue_path = args[0]
         if not self.queue_path:
-            self._error_usage()
+            self.parser.error('please specify the queue path')
         if (self.username or self.password) and \
            not (self.username and self.password):
-            if self.verbose:
-                print >>sys.stderr, "Must use username and password together."
-            self._error = True
+            self.parser.error('Must use username and password together.')
         if self.force_tls and self.no_tls:
-            if self.verbose:
-                print >>sys.stderr, \
-                    "--force-tls and --no-tls are mutually exclusive."
-            self._error = True
+            self.parser.error('--force-tls and --no-tls are mutually exclusive.')
 
     def _load_config(self, path):
         section = "app:zope-sendmail"
@@ -478,12 +444,6 @@ class ConsoleApp(object):
         self.force_tls = boolean(config.get(section, "force_tls"))
         self.no_tls = boolean(config.get(section, "no_tls"))
         self.queue_path = string_or_none(config.get(section, "queue_path"))
-
-    def _error_usage(self):
-        if self.verbose:
-            print >>sys.stderr, self._usage % {"script_name": self.script_name,}
-        self._error = True
-
 
 def run():
     logging.basicConfig()

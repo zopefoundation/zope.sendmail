@@ -18,6 +18,8 @@ Simple implementation of the MailDelivery, Mailers and MailEvents.
 
 import os.path
 import shutil
+import sys
+from cStringIO import StringIO
 
 from tempfile import mkdtemp
 from unittest import TestCase, TestSuite, makeSuite, main
@@ -177,8 +179,11 @@ class TestConsoleApp(TestCase):
         self.delivery = QueuedMailDelivery(self.queue_dir)
         self.maildir = Maildir(self.queue_dir, True)
         self.mailer = MailerStub()
-        
+        self.real_stderr = sys.stderr
+        self.stderr = StringIO()
+
     def tearDown(self):
+        sys.stderr = self.real_stderr
         shutil.rmtree(self.dir)
 
     def test_args_processing(self):
@@ -186,7 +191,6 @@ class TestConsoleApp(TestCase):
         cmdline = "zope-sendmail %s" % self.dir
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEquals("zope-sendmail", app.script_name)
-        self.assertFalse(app._error)
         self.assertEquals(self.dir, app.queue_path)
         self.assertFalse(app.daemon)
         self.assertEquals(3, app.interval)
@@ -196,27 +200,20 @@ class TestConsoleApp(TestCase):
         self.assertEquals(None, app.password)
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
-        # simplest case that doesn't work
+
+    def test_args_processing_no_queue_path(self):
+        # simplest case that doesn't work: no queue path specified
         cmdline = "zope-sendmail"
-        app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertEquals("zope-sendmail", app.script_name)
-        self.assertTrue(app._error)
-        self.assertEquals(None, app.queue_path)
-        self.assertFalse(app.daemon)
-        self.assertEquals(3, app.interval)
-        self.assertEquals("localhost", app.hostname)
-        self.assertEquals(25, app.port)
-        self.assertEquals(None, app.username)
-        self.assertEquals(None, app.password)
-        self.assertFalse(app.force_tls)
-        self.assertFalse(app.no_tls)
+        sys.stderr = self.stderr
+        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
+    def test_args_processing_almost_all_options(self):
         # use (almost) all of the options
         cmdline = "zope-sendmail --daemon --interval 7 --hostname foo --port 75 " \
             "--username chris --password rossi --force-tls " \
             "%s" % self.dir
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEquals("zope-sendmail", app.script_name)
-        self.assertFalse(app._error)
         self.assertEquals(self.dir, app.queue_path)
         self.assertTrue(app.daemon)
         self.assertEquals(7, app.interval)
@@ -226,18 +223,19 @@ class TestConsoleApp(TestCase):
         self.assertEquals("rossi", app.password)
         self.assertTrue(app.force_tls)
         self.assertFalse(app.no_tls)
+
+    def test_args_processing_username_without_password(self):
         # test username without password
         cmdline = "zope-sendmail --username chris %s" % self.dir
-        app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertTrue(app._error)
-        # test --tls and --no-tls together
-        cmdline = "zope-sendmail --tls --no-tls %s" % self.dir
-        app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertTrue(app._error)
+        sys.stderr = self.stderr
+        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
+    def test_args_processing_force_tls_and_no_tls(self):
         # test force_tls and no_tls
-        comdline = "zope-sendmail --force-tls --no-tls %s" % self.dir
-        self.assertTrue(app._error)
-        
+        cmdline = "zope-sendmail --force-tls --no-tls %s" % self.dir
+        sys.stderr = self.stderr
+        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
     def test_ini_parse(self):
         ini_path = os.path.join(self.dir, "zope-sendmail.ini")
         f = open(ini_path, "w")
@@ -247,7 +245,6 @@ class TestConsoleApp(TestCase):
         cmdline = """zope-sendmail --config %s""" % ini_path
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEquals("zope-sendmail", app.script_name)
-        self.assertFalse(app._error)
         self.assertEquals("hammer/dont/hurt/em", app.queue_path)
         self.assertFalse(app.daemon)
         self.assertEquals(33, app.interval)
@@ -264,7 +261,6 @@ class TestConsoleApp(TestCase):
         cmdline = """zope-sendmail --config %s %s""" % (ini_path, self.dir)
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEquals("zope-sendmail", app.script_name)
-        self.assertFalse(app._error)
         self.assertEquals(self.dir, app.queue_path)
         self.assertFalse(app.daemon)
         self.assertEquals(3, app.interval)
