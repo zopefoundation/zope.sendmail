@@ -47,7 +47,7 @@ MAX_SEND_TIME = 60*60*3
 # will be performed for each file in the maildir each time the thread "wakes
 # up" to send messages.
 #
-# Any error conditions not depected on the diagram will provoke the catch-all
+# Any error conditions not depicted on the diagram will provoke the catch-all
 # exception logging of the ``run`` method.
 #
 # In the diagram the "message file" is the file in the maildir's "cur" directory
@@ -114,7 +114,8 @@ class QueueProcessorThread(threading.Thread):
     def setMaildir(self, maildir):
         """Set the maildir.
 
-        This method is used just to provide a `maildir` stubs ."""
+        This method is used just to provide a `maildir` stub.
+        """
         self.maildir = maildir
 
     def setQueuePath(self, path):
@@ -185,12 +186,12 @@ class QueueProcessorThread(threading.Thread):
                             # other than not existing; we'll report the error
                             raise
 
-                    # if the tmp file exists, check it's age
+                    # if the tmp file exists, check its age
                     if age is not None:
                         try:
                             if age > MAX_SEND_TIME:
                                 # the tmp file is "too old"; this suggests
-                                # that during an attemt to send it, the
+                                # that during an attempt to send it, the
                                 # process died; remove the tmp file so we
                                 # can try again
                                 os.unlink(tmp_filename)
@@ -284,7 +285,7 @@ class QueueProcessorThread(threading.Thread):
                                 # someone else unlinked the file; oh well
                                 pass
                             else:
-                                # something bad happend, log it
+                                # something bad happened, log it
                                 raise
                     finally:
                         self._lock.release()
@@ -295,7 +296,7 @@ class QueueProcessorThread(threading.Thread):
                             # someone else unlinked the file; oh well
                             pass
                         else:
-                            # something bad happend, log it
+                            # something bad happened, log it
                             raise
 
                     # TODO: maybe log the Message-Id of the message sent
@@ -369,7 +370,7 @@ class ConsoleApp(object):
         --no-tls            Do not use TLS even if is available.  Not enabled
                             by default.
 
-        --config <inifile>  Get configuration from specificed ini file; it must
+        --config <inifile>  Get configuration from specified ini file; it must
                             contain a section [app:zope-sendmail].
 
     """
