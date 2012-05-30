@@ -342,6 +342,18 @@ def string_or_none(s):
 class ConsoleApp(object):
     """Allows running of Queue Processor from the console."""
 
+    INI_SECTION = "app:zope-sendmail"
+    INI_NAMES = [
+        "interval",
+        "hostname",
+        "port",
+        "username",
+        "password",
+        "force_tls",
+        "no_tls",
+        "queue_path",
+    ]
+
     parser = optparse.OptionParser(usage='%prog [OPTIONS] path/to/maildir')
     parser.add_option('--daemon', action='store_true',
                       help="Run in daemon mode, periodically checking queue "
@@ -370,7 +382,11 @@ class ConsoleApp(object):
                            "by default.")
     parser.add_option('--config', metavar='<inifile>',
                       help="Get configuration from specified ini file; it must "
-                           "contain a section [app:zope-sendmail].")
+                           "contain a section [%s] that can contain the "
+                           "following keys: %s. If you specify the queue path "
+                           "in the ini file, you don't need to specify it on "
+                           "the command line." % (INI_SECTION,
+                                                   ', '.join(INI_NAMES)))
 
     daemon = False
     interval = 3
@@ -422,17 +438,8 @@ class ConsoleApp(object):
             self.parser.error('--force-tls and --no-tls are mutually exclusive.')
 
     def _load_config(self, path):
-        section = "app:zope-sendmail"
-        names = [
-            "interval",
-            "hostname",
-            "port",
-            "username",
-            "password",
-            "force_tls",
-            "no_tls",
-            "queue_path",
-        ]
+        section = self.INI_SECTION
+        names = self.INI_NAMES
         defaults = dict([(name, str(getattr(self, name))) for name in names])
         config = ConfigParser.ConfigParser(defaults)
         config.read(path)
