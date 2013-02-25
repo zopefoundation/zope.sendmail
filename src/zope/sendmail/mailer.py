@@ -14,12 +14,18 @@
 """Classes which abstract different channels a message could be sent to.
 """
 __docformat__ = 'restructuredtext'
-
+import six
 import socket
 from smtplib import SMTP
 
 from zope.interface import implementer
 from zope.sendmail.interfaces import ISMTPMailer
+
+try:
+    from socket import sslerror as SSLError
+except ImportError:
+    # Py3: The error location changed.
+    from ssl import SSLError
 
 have_ssl = hasattr(socket, 'ssl')
 
@@ -48,17 +54,17 @@ class SMTPMailer(object):
             if code < 200 or code >= 300:
                 raise RuntimeError('Error sending HELO to the SMTP server '
                                    '(code=%s, response=%s)' % (code, response))
-        
+
         self.code, self.response = code, response
 
 
     def abort(self):
         if self.connection is None:
             return
-        
+
         try:
             self.connection.quit()
-        except socket.sslerror:
+        except SSLError:
             #something weird happened while quiting
             self.connection.close()
 
@@ -68,7 +74,7 @@ class SMTPMailer(object):
             self.vote(fromaddr, toaddrs, message)
 
         connection, code, response = self.connection, self.code, self.response
-            
+
 
         # encryption support
         have_tls =  connection.has_extn('starttls')
@@ -82,9 +88,9 @@ class SMTPMailer(object):
         if connection.does_esmtp:
             if self.username is not None and self.password is not None:
                 username, password = self.username, self.password
-                if isinstance(username, unicode):
+                if isinstance(username, six.text_type):
                     username = username.encode('utf-8')
-                if isinstance(password, unicode):
+                if isinstance(password, six.text_type):
                     password = password.encode('utf-8')
                 connection.login(username, password)
         elif self.username:
@@ -94,6 +100,6 @@ class SMTPMailer(object):
         connection.sendmail(fromaddr, toaddrs, message)
         try:
             connection.quit()
-        except socket.sslerror:
+        except SSLError:
             #something weird happened while quiting
             connection.close()

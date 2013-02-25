@@ -13,6 +13,8 @@
 ##############################################################################
 """Unit tests for zope.sendmail.maildir module
 """
+from __future__ import print_function
+from __future__ import print_function
 
 import unittest
 import stat
@@ -126,13 +128,13 @@ class FakeOsModule(object):
     def rename(self, old, new):
         self._renamed_files += ((old, new), )
 
-    def open(self, filename, flags, mode=0777):
+    def open(self, filename, flags, mode=0o777):
         if (flags & os.O_EXCL and flags & os.O_CREAT
             and self.access(filename, 0)):
             raise OSError(errno.EEXIST, 'file already exists')
         if not flags & os.O_CREAT and not self.access(filename, 0):
             raise OSError('file not found')
-        fd = max(self._descriptors.keys() + [2]) + 1
+        fd = max(list(self._descriptors.keys()) + [2]) + 1
         self._descriptors[fd] = filename, flags, mode
         return fd
 
@@ -162,7 +164,7 @@ class FakeFile(object):
     def __init__(self, filename, mode):
         self._filename = filename
         self._mode = mode
-        self._written = ''
+        self._written = b''
         self._closed = False
 
     def close(self):
@@ -172,7 +174,7 @@ class FakeFile(object):
         self._written += data
 
     def writelines(self, lines):
-        self._written += ''.join(lines)
+        self._written += b''.join(lines)
 
 
 class TestMaildir(unittest.TestCase):
@@ -209,8 +211,7 @@ class TestMaildir(unittest.TestCase):
         # Case 2b: directory does not exist, create = True
         m = Maildir('/path/to/nosuchfolder', True)
         verifyObject(IMaildir, m)
-        dirs = list(self.fake_os_module._made_directories)
-        dirs.sort()
+        dirs = sorted(self.fake_os_module._made_directories)
         self.assertEquals(dirs, ['/path/to/nosuchfolder',
                                  '/path/to/nosuchfolder/cur',
                                  '/path/to/nosuchfolder/new',
@@ -227,11 +228,11 @@ class TestMaildir(unittest.TestCase):
     def test_iteration(self):
         from zope.sendmail.maildir import Maildir
         m = Maildir('/path/to/maildir')
-        messages = list(m)
-        self.assertEquals(messages, ['/path/to/maildir/cur/2',
-                                     '/path/to/maildir/cur/1',
-                                     '/path/to/maildir/new/2',
-                                     '/path/to/maildir/new/1'])
+        messages = sorted(m)
+        self.assertEquals(messages, ['/path/to/maildir/cur/1',
+                                     '/path/to/maildir/cur/2',
+                                     '/path/to/maildir/new/1',
+                                     '/path/to/maildir/new/2'])
 
     def test_newMessage(self):
         from zope.sendmail.maildir import Maildir
@@ -257,10 +258,10 @@ class TestMaildir(unittest.TestCase):
         writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEquals(writer._fd._filename, filename1)
         self.assertEquals(writer._fd._mode, 'w')  # TODO or 'wb'?
-        print >> writer, 'fee',
+        print('fee', end='', file=writer)
         writer.write(' fie')
         writer.writelines([' foe', ' foo'])
-        self.assertEquals(writer._fd._written, 'fee fie foe foo')
+        self.assertEquals(writer._fd._written, b'fee fie foe foo')
 
         writer.abort()
         self.assertEquals(writer._fd._closed, True)
@@ -301,11 +302,11 @@ class TestMaildir(unittest.TestCase):
         writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEquals(writer._fd._filename, filename1)
         self.assertEquals(writer._fd._mode, 'w')  # TODO or 'wb'?
-        print >> writer, u'fe\xe8',
+        print(u'fe\xe8', end='', file=writer)
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
         self.assertEquals(writer._fd._written,
-                          'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+                          b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
 
 
 def test_suite():

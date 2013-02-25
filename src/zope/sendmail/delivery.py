@@ -18,10 +18,9 @@ This module contains various implementations of `MailDeliverys`.
 __docformat__ = 'restructuredtext'
 
 import os
-import rfc822
+import email.parser
 import logging
 import warnings
-from cStringIO import StringIO
 from random import randrange
 from time import strftime
 from socket import gethostname
@@ -80,7 +79,7 @@ class MailDataManager(object):
     def tpc_finish(self, transaction):
         try:
             self.callable(*self.args)
-        except Exception, e:
+        except Exception as e:
             # Any exceptions here can cause database corruption.
             # Better to protect the data and potentially miss emails than
             # leave a database in an inconsistent state which requires a
@@ -101,8 +100,9 @@ class AbstractMailDelivery(object):
         return "%s@%s" % (left_part, gethostname())
 
     def send(self, fromaddr, toaddrs, message):
-        parser = rfc822.Message(StringIO(message))
-        messageid = parser.getheader('Message-Id')
+        parser = email.parser.Parser()
+        msg = parser.parsestr(message)
+        messageid = msg.get('Message-Id')
         if messageid:
             if not messageid.startswith('<') or not messageid.endswith('>'):
                 raise ValueError('Malformed Message-Id header')
@@ -127,12 +127,12 @@ class DirectMailDelivery(AbstractMailDelivery):
             vote = self.mailer.vote
         except AttributeError:
             # We've got an old mailer, just pass through voting
-            warnings.warn("The mailer %s does not provide a vote method" 
+            warnings.warn("The mailer %s does not provide a vote method"
                                     % (repr(self.mailer)), DeprecationWarning)
-            
+
             def vote(*args, **kwargs):
                 pass
-            
+
         return MailDataManager(self.mailer.send,
                                args=(fromaddr, toaddrs, message),
                                vote=vote,

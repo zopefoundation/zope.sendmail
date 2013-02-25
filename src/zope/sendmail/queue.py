@@ -18,7 +18,6 @@ This module contains the queue processor thread.
 __docformat__ = 'restructuredtext'
 
 import atexit
-import ConfigParser
 import logging
 import optparse
 import os
@@ -36,6 +35,11 @@ if sys.platform == 'win32':
     _os_link = lambda src, dst: win32file.CreateHardLink(dst, src, None)
 else:
     _os_link = os.link
+
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 # The longest time sending a file is expected to take.  Longer than this and
 # the send attempt will be assumed to have failed.  This means that sending
@@ -177,7 +181,7 @@ class QueueProcessorThread(threading.Thread):
                         age = None
                         mtime = os.stat(tmp_filename)[stat.ST_MTIME]
                         age = time.time() - mtime
-                    except OSError, e:
+                    except OSError as e:
                         if e.errno == 2: # file does not exist
                             # the tmp file could not be stated because it
                             # doesn't exist, that's fine, keep going
@@ -202,7 +206,7 @@ class QueueProcessorThread(threading.Thread):
                                 continue
                             # if we get here, the file existed, but was too
                             # old, so it was unlinked
-                        except OSError, e:
+                        except OSError as e:
                             if e.errno == 2: # file does not exist
                                 # it looks like someone else removed the tmp
                                 # file, that's fine, we'll try to deliver the
@@ -216,7 +220,7 @@ class QueueProcessorThread(threading.Thread):
                     # more processes to touch the file "simultaneously")
                     try:
                         os.utime(filename, None)
-                    except OSError, e:
+                    except OSError as e:
                         if e.errno == 2: # file does not exist
                             # someone removed the message before we could
                             # touch it, no need to complain, we'll just keep
@@ -228,12 +232,12 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         #os.link(filename, tmp_filename)
                         _os_link(filename, tmp_filename)
-                    except OSError, e:
+                    except OSError as e:
                         if e.errno == 17: # file exists, *nix
                             # it looks like someone else is sending this
                             # message too; we'll try again later
                             continue
-                    except Exception, e:
+                    except Exception as e:
                         if e[0] == 183 and e[1] == 'CreateHardLink':
                             # file exists, win32
                             continue
@@ -260,7 +264,7 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         try:
                             self.mailer.send(fromaddr, toaddrs, message)
-                        except smtplib.SMTPResponseException, e:
+                        except smtplib.SMTPResponseException as e:
                             if 500 <= e.smtp_code <= 599:
                                 # permanent error, ditch the message
                                 self.log.error(
@@ -272,7 +276,7 @@ class QueueProcessorThread(threading.Thread):
                             else:
                                 # Log an error and retry later
                                 raise
-                        except smtplib.SMTPRecipientsRefused, e:
+                        except smtplib.SMTPRecipientsRefused as e:
                             # All recipients are refused by smtp
                             # server. Dont try to redeliver the message.
                             self.log.error("Email recipients refused: %s",
@@ -281,7 +285,7 @@ class QueueProcessorThread(threading.Thread):
 
                         try:
                             os.unlink(filename)
-                        except OSError, e:
+                        except OSError as e:
                             if e.errno == 2: # file does not exist
                                 # someone else unlinked the file; oh well
                                 pass
@@ -292,7 +296,7 @@ class QueueProcessorThread(threading.Thread):
                         self._lock.release()
                     try:
                         os.unlink(tmp_filename)
-                    except OSError, e:
+                    except OSError as e:
                         if e.errno == 2: # file does not exist
                             # someone else unlinked the file; oh well
                             pass
@@ -441,7 +445,7 @@ class ConsoleApp(object):
         section = self.INI_SECTION
         names = self.INI_NAMES
         defaults = dict([(name, str(getattr(self, name))) for name in names])
-        config = ConfigParser.ConfigParser(defaults)
+        config = configparser.ConfigParser(defaults)
         config.read(path)
         self.interval = float(config.get(section, "interval"))
         self.hostname = config.get(section, "hostname")

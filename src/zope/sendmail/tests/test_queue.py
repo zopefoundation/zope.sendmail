@@ -15,18 +15,20 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
-
 import os.path
 import shutil
 import sys
-from cStringIO import StringIO
-
 from tempfile import mkdtemp
 from unittest import TestCase, TestSuite, makeSuite, main
 
 from zope.sendmail.queue import ConsoleApp
 from zope.sendmail.tests.test_delivery import MaildirStub, LoggerStub, \
     BrokenMailerStub, SMTPResponseExceptionMailerStub, MailerStub
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 class TestQueueProcessorThread(TestCase):
@@ -61,11 +63,10 @@ class TestQueueProcessorThread(TestCase):
 
     def test_deliveration(self):
         self.filename = os.path.join(self.dir, 'message')
-        temp = open(self.filename, "w+b")
-        temp.write('X-Zope-From: foo@example.com\n'
-                   'X-Zope-To: bar@example.com, baz@example.com\n'
-                   'Header: value\n\nBody\n')
-        temp.close()
+        with open(self.filename, "w+b") as temp:
+            temp.write(b'X-Zope-From: foo@example.com\n'
+                       b'X-Zope-To: bar@example.com, baz@example.com\n'
+                       b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
         self.assertEquals(self.mailer.sent_messages,
@@ -82,11 +83,10 @@ class TestQueueProcessorThread(TestCase):
     def test_error_logging(self):
         self.thread.setMailer(BrokenMailerStub())
         self.filename = os.path.join(self.dir, 'message')
-        temp = open(self.filename, "w+b")
-        temp.write('X-Zope-From: foo@example.com\n'
-                   'X-Zope-To: bar@example.com, baz@example.com\n'
-                   'Header: value\n\nBody\n')
-        temp.close()
+        with open(self.filename, "w+b") as temp:
+            temp.write(b'X-Zope-From: foo@example.com\n'
+                       b'X-Zope-To: bar@example.com, baz@example.com\n'
+                       b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
         self.assertEquals(self.thread.log.errors,
@@ -99,11 +99,10 @@ class TestQueueProcessorThread(TestCase):
         # Test a transient error
         self.thread.setMailer(SMTPResponseExceptionMailerStub(451))
         self.filename = os.path.join(self.dir, 'message')
-        temp = open(self.filename, "w+b")
-        temp.write('X-Zope-From: foo@example.com\n'
-                   'X-Zope-To: bar@example.com, baz@example.com\n'
-                   'Header: value\n\nBody\n')
-        temp.close()
+        with open(self.filename, "w+b") as temp:
+            temp.write(b'X-Zope-From: foo@example.com\n'
+                       b'X-Zope-To: bar@example.com, baz@example.com\n'
+                       b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
 
@@ -119,11 +118,10 @@ class TestQueueProcessorThread(TestCase):
         # Test a permanent error
         self.thread.setMailer(SMTPResponseExceptionMailerStub(550))
         self.filename = os.path.join(self.dir, 'message')
-        temp = open(self.filename, "w+b")
-        temp.write('X-Zope-From: foo@example.com\n'
-                   'X-Zope-To: bar@example.com, baz@example.com\n'
-                   'Header: value\n\nBody\n')
-        temp.close()
+        with open(self.filename, "w+b") as temp:
+            temp.write(b'X-Zope-From: foo@example.com\n'
+                       b'X-Zope-To: bar@example.com, baz@example.com\n'
+                       b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
 
@@ -143,11 +141,10 @@ class TestQueueProcessorThread(TestCase):
         self.thread.setMailer(SMTPRecipientsRefusedMailerStub(
                                ['bar@example.com']))
         self.filename = os.path.join(self.dir, 'message')
-        temp = open(self.filename, "w+b")
-        temp.write('X-Zope-From: foo@example.com\n'
-                   'X-Zope-To: bar@example.com, baz@example.com\n'
-                   'Header: value\n\nBody\n')
-        temp.close()
+        with open(self.filename, "w+b") as temp:
+            temp.write(b'X-Zope-From: foo@example.com\n'
+                       b'X-Zope-To: bar@example.com, baz@example.com\n'
+                       b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
 
@@ -238,9 +235,8 @@ class TestConsoleApp(TestCase):
 
     def test_ini_parse(self):
         ini_path = os.path.join(self.dir, "zope-sendmail.ini")
-        f = open(ini_path, "w")
-        f.write(test_ini)
-        f.close()
+        with open(ini_path, "w") as f:
+            f.write(test_ini)
         # override most everything
         cmdline = """zope-sendmail --config %s""" % ini_path
         app = ConsoleApp(cmdline.split(), verbose=False)
@@ -255,9 +251,8 @@ class TestConsoleApp(TestCase):
         self.assertFalse(app.force_tls)
         self.assertTrue(app.no_tls)
         # override nothing, make sure defaults come through
-        f = open(ini_path, "w")
-        f.write("[app:zope-sendmail]\n\nqueue_path=foo\n")
-        f.close()
+        with open(ini_path, "w") as f:
+            f.write("[app:zope-sendmail]\n\nqueue_path=foo\n")
         cmdline = """zope-sendmail --config %s %s""" % (ini_path, self.dir)
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEquals("zope-sendmail", app.script_name)

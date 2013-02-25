@@ -45,10 +45,9 @@ def MailDeliveryNames(context=None):
       >>> vocabulary = MailDeliveryNames(None)
       >>> names = [term.value for term in vocabulary]
       >>> names.sort()
-      >>> print ' '.join(names)
+      >>> print(' '.join(names))
       and completely different for now something
     """
-    
     utils = zope.component.getUtilitiesFor(IMailDelivery, context)
     terms = [SimpleTerm(name) for name, util in utils]
     return SimpleVocabulary(terms)

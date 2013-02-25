@@ -15,10 +15,11 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
+from __future__ import print_function
 
 import smtplib
-from unittest import TestCase, TestSuite, makeSuite, main
 import doctest
+from unittest import TestCase, TestSuite, makeSuite, main
 
 import transaction
 from zope.interface import implementer
@@ -34,7 +35,7 @@ class MailerStub(object):
 
     def send(self, fromaddr, toaddrs, message):
         self.sent_messages.append((fromaddr, toaddrs, message))
-    
+
     abort = None
     vote = None
 
@@ -51,10 +52,10 @@ class TestMailDataManager(TestCase):
 
 
 def print_success(*args):
-    print "message successfully sent, args: %s" % (args, )
+    print("message successfully sent, args: %s" % (args, ))
 
 def print_abort():
-    print "message aborted"
+    print("message aborted")
 
 
 def doctest_successful_commit():
@@ -140,7 +141,7 @@ class TestDirectMailDelivery(TestCase):
         self.assertEquals(mailer.sent_messages, [])
         transaction.abort()
         self.assertEquals(mailer.sent_messages, [])
-    
+
     def testBrokenMailerErrorsAreEaten(self):
         from zope.sendmail.delivery import DirectMailDelivery
         mailer = BrokenMailerStub()
@@ -162,7 +163,7 @@ class TestDirectMailDelivery(TestCase):
         finally:
             # Clean up after ourselves
             transaction.abort()
-    
+
     def testRefusingMailerDiesInVote(self):
         from zope.sendmail.delivery import DirectMailDelivery
         mailer = RefusingMailerStub()
@@ -275,7 +276,7 @@ class BrokenMailerStub(object):
 
     def send(self, fromaddr, toaddrs, message):
         raise BizzarreMailError("bad things happened while sending mail")
-    
+
     vote = None
     abort = None
 

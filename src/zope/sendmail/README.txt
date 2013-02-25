@@ -106,8 +106,8 @@ test layer.  Something like this will do the trick::
     class FakeMailDelivery(object):
 
         def send(self, source, dest, body):
-            print "*** Sending email from %s to %s:" % (source, dest)
-            print body
+            print("*** Sending email from %s to %s:" % (source, dest))
+            print(body)
             return 'fake-message-id@example.com'
 
 Register it with the standard ``utility`` directive::

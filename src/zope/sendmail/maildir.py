@@ -13,19 +13,17 @@
 ##############################################################################
 """Read/write access to `Maildir` folders.
 """
-__docformat__ = 'restructuredtext'
-
-import os
 import errno
+import os
+import random
+import six
 import socket
 import time
-import random
 
 from zope.interface import implementer, provider
 
 from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
-
 
 @provider(IMaildirFactory)
 @implementer(IMaildir)
@@ -93,8 +91,8 @@ class Maildir(object):
                                       random.randrange(randmax))
             filename = join(subdir_tmp, unique)
             try:
-                fd = os.open(filename, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0600)
-            except OSError, e:
+                fd = os.open(filename, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0o600)
+            except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
                 # File exists
@@ -112,7 +110,7 @@ class Maildir(object):
 
 
 def _encode_utf8(s):
-    if isinstance(s, unicode):
+    if isinstance(s, six.text_type):
         s = s.encode('utf-8')
     return s
 

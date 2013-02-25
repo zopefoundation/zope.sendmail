@@ -20,7 +20,7 @@ from zope.component.zcml import handler
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
 from zope.interface import Interface
-from zope.schema import TextLine, BytesLine, Int, Bool
+from zope.schema import TextLine, ASCIILine, Int, Bool
 
 from zope.sendmail.delivery import QueuedMailDelivery, DirectMailDelivery
 from zope.sendmail.interfaces import IMailer, IMailDelivery
@@ -141,7 +141,7 @@ class IMailerDirective(Interface):
 class ISMTPMailerDirective(IMailerDirective):
     """Registers a new SMTP mailer."""
 
-    hostname = BytesLine(
+    hostname = ASCIILine(
         title=u"Hostname",
         description=u"Hostname of the SMTP host.",
         default="localhost",

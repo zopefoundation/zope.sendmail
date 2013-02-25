@@ -13,14 +13,25 @@
 ##############################################################################
 """Tests for mailers.
 """
-
-from StringIO import StringIO
+import socket
+import unittest
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail.mailer import SMTPMailer
-import socket
-import unittest
 
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+try:
+    from socket import sslerror as SSLError
+except ImportError:
+    # Py3: The error location changed.
+    from ssl import SSLError
+
+# This works for both, Python 2 and 3.
+port_types = (int, str)
 
 class TestSMTPMailer(unittest.TestCase):
 
@@ -35,7 +46,7 @@ class TestSMTPMailer(unittest.TestCase):
                 myself.port = p
                 myself.quitted = False
                 myself.closed = False
-                if type(p) == type(u""):
+                if not isinstance(p, port_types):
                     raise socket.error("Int or String expected")
                 self.smtp = myself
 
@@ -50,7 +61,7 @@ class TestSMTPMailer(unittest.TestCase):
 
             def quit(self):
                 if self.fail_on_quit:
-                    raise socket.sslerror("dang")
+                    raise SSLError("dang")
                 self.quitted = True
                 self.close()
 
@@ -100,8 +111,8 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertEquals(self.smtp.username, 'foo')
-        self.assertEquals(self.smtp.password, 'evil')
+        self.assertEquals(self.smtp.username, b'foo')
+        self.assertEquals(self.smtp.password, b'evil')
         self.assertEquals(self.smtp.hostname, 'spamrelay')
         self.assertEquals(self.smtp.port, '31337')
         self.assertEquals(self.smtp.fromaddr, fromaddr)
@@ -119,20 +130,20 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertEquals(self.smtp.username, 'f\xc3\xb8\xc3\xb8')
-        self.assertEquals(self.smtp.password, '\xc3\xa9vil')
+        self.assertEquals(self.smtp.username, b'f\xc3\xb8\xc3\xb8')
+        self.assertEquals(self.smtp.password, b'\xc3\xa9vil')
 
     def test_send_auth_nonascii(self):
         fromaddr = 'me@example.com'
         toaddrs = ('you@example.com', 'him@example.com')
         msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-        self.mailer.username = 'f\xc3\xb8\xc3\xb8' # double o slash
-        self.mailer.password = '\xc3\xa9vil' # e acute
+        self.mailer.username = b'f\xc3\xb8\xc3\xb8' # double o slash
+        self.mailer.password = b'\xc3\xa9vil' # e acute
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertEquals(self.smtp.username, 'f\xc3\xb8\xc3\xb8')
-        self.assertEquals(self.smtp.password, '\xc3\xa9vil')
+        self.assertEquals(self.smtp.username, b'f\xc3\xb8\xc3\xb8')
+        self.assertEquals(self.smtp.password, b'\xc3\xa9vil')
 
     def test_send_failQuit(self):
         self.mailer.smtp.fail_on_quit = True
@@ -162,7 +173,7 @@ class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
                 myself.port = p
                 myself.quitted = False
                 myself.closed = False
-                if type(p) == type(u""):
+                if not isinstance(p, port_types):
                     raise socket.error("Int or String expected")
                 self.smtp = myself
 
