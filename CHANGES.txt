@@ -2,10 +2,10 @@
 CHANGES
 =======
 
-4.0.0a2 (unreleased)
---------------------
+y (2013-02-26)
+--------------
 
-- Nothing changed yet.
+- Fixed license Trove classifier.
 
 
 4.0.0a1 (2013-02-25)
