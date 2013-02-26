@@ -41,7 +41,7 @@ def alltests():
     return unittest.TestSuite(suites)
 
 setup(name='zope.sendmail',
-      version='4.0.0a2',
+      version='4.0.0a3.dev0',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
