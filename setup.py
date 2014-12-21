@@ -22,23 +22,7 @@ from setuptools import setup, find_packages
 tests_require=[
     'zope.security',
     'zope.testing',
-    'zope.testrunner',
     ]
-
-def alltests():
-    import os
-    import sys
-    import unittest
-    # use the zope.testrunner machinery to find all the
-    # test suites we've put under ourselves
-    import zope.testrunner.find
-    import zope.testrunner.options
-    here = os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'))
-    args = sys.argv[:]
-    defaults = ["--test-path", here]
-    options = zope.testrunner.options.get_options(args, defaults)
-    suites = list(zope.testrunner.find.find_suites(options))
-    return unittest.TestSuite(suites)
 
 setup(name='zope.sendmail',
       version='4.0.0a3.dev0',
@@ -85,7 +69,7 @@ setup(name='zope.sendmail',
         'zope.configuration',
         ],
       tests_require=tests_require,
-      test_suite = '__main__.alltests',
+      test_suite = 'zope.sendmail.tests',
       include_package_data = True,
       zip_safe = False,
       entry_points="""
