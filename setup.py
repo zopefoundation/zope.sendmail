@@ -36,7 +36,7 @@ long_description=(
         )
 
 setup(name='zope.sendmail',
-      version='4.0.0',
+      version='4.0.1.dev0',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
