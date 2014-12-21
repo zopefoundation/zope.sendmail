@@ -15,11 +15,8 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
-from __future__ import print_function
-
 import smtplib
-import doctest
-from unittest import TestCase, TestSuite, makeSuite, main
+from unittest import TestCase, TestSuite, makeSuite
 
 import transaction
 from zope.interface import implementer
@@ -50,46 +47,49 @@ class TestMailDataManager(TestCase):
         self.assertEqual(manager.callable, object)
         self.assertEqual(manager.args, (1, 2))
 
+    def test_successful_commit(self):
+        #Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+        from zope.sendmail.delivery import MailDataManager
 
-def print_success(*args):
-    print("message successfully sent, args: %s" % (args, ))
+        _success = []
+        def _on_success(*args):
+            _success.append(args)
+        _abort = []
+        def _on_abort(*args):
+            _abort.append(args)
 
-def print_abort():
-    print("message aborted")
+        manager = MailDataManager(_on_success, ('foo', 'bar'),
+                                  onAbort=_on_abort)
+        xact = object()
+        manager.tpc_begin(xact)
+        manager.commit(xact)
+        manager.tpc_vote(xact)
+        manager.tpc_finish(xact)
+        self.assertEqual(_success, [('foo', 'bar')])
+        self.assertEqual(_abort, [])
 
+    def test_unsuccessful_commit(self):
+        #Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+        from zope.sendmail.delivery import MailDataManager
 
-def doctest_successful_commit():
-    """Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+        _success = []
+        _abort = []
 
-    Let's do a full two-phase commit.
-
-        >>> from zope.sendmail.delivery import MailDataManager
-        >>> manager = MailDataManager(print_success, ('foo', 'bar'),
-        ...                           onAbort=print_abort)
-        >>> transaction = object()
-        >>> manager.tpc_begin(transaction)
-        >>> manager.commit(transaction)
-        >>> manager.tpc_vote(transaction)
-        >>> manager.tpc_finish(transaction)
-        message successfully sent, args: ('foo', 'bar')
-
-    """
-
-
-def doctest_unsuccessful_commit():
-    """Regression test for http://www.zope.org/Collectors/Zope3-dev/590
-
-    Let's start a two-phase commit, then abort it.
-
-        >>> from zope.sendmail.delivery import MailDataManager
-        >>> manager = MailDataManager(print_success, onAbort=print_abort)
-        >>> manager.tpc_begin(transaction)
-        >>> manager.commit(transaction)
-        >>> manager.tpc_vote(transaction)
-        >>> manager.tpc_abort(transaction)
-        message aborted
-
-    """
+        _success = []
+        def _on_success(*args):
+            _success.append(args)
+        _abort = []
+        def _on_abort(*args):
+            _abort.append(args)
+        manager = MailDataManager(_on_success, ('foo', 'bar'),
+                                  onAbort=_on_abort)
+        xact = object()
+        manager.tpc_begin(xact)
+        manager.commit(xact)
+        manager.tpc_vote(xact)
+        manager.tpc_abort(xact)
+        self.assertEqual(_success, [])
+        self.assertEqual(_abort, [()])
 
 
 class TestDirectMailDelivery(TestCase):
@@ -381,8 +381,4 @@ def test_suite():
         makeSuite(TestMailDataManager),
         makeSuite(TestDirectMailDelivery),
         makeSuite(TestQueuedMailDelivery),
-        doctest.DocTestSuite(),
         ))
-
-if __name__ == '__main__':
-    main()
