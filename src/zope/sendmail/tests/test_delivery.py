@@ -118,31 +118,32 @@ class TestDirectMailDelivery(TestCase):
                        'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
-        self.assertEquals(msgid, '20030519.1234@example.org')
-        self.assertEquals(mailer.sent_messages, [])
+        self.assertEqual(msgid, '20030519.1234@example.org')
+        self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
-        self.assertEquals(mailer.sent_messages,
+        self.assertEqual(mailer.sent_messages,
                           [(fromaddr, toaddrs, opt_headers + message)])
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
-        self.assert_('@' in msgid)
-        self.assertEquals(mailer.sent_messages, [])
+        self.assertTrue('@' in msgid)
+        self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
-        self.assertEquals(len(mailer.sent_messages), 1)
-        self.assertEquals(mailer.sent_messages[0][0], fromaddr)
-        self.assertEquals(mailer.sent_messages[0][1], toaddrs)
-        self.assert_(mailer.sent_messages[0][2].endswith(message))
+        self.assertEqual(len(mailer.sent_messages), 1)
+        self.assertEqual(mailer.sent_messages[0][0], fromaddr)
+        self.assertEqual(mailer.sent_messages[0][1], toaddrs)
+        self.assertTrue(mailer.sent_messages[0][2].endswith(message))
         new_headers = mailer.sent_messages[0][2][:-len(message)]
-        self.assert_(new_headers.find('Message-Id: <%s>' % msgid) != -1)
+        self.assertTrue(new_headers.find('Message-Id: <%s>' % msgid) != -1)
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
-        self.assertEquals(mailer.sent_messages, [])
+        self.assertEqual(mailer.sent_messages, [])
         transaction.abort()
-        self.assertEquals(mailer.sent_messages, [])
+        self.assertEqual(mailer.sent_messages, [])
 
     def testBrokenMailerErrorsAreEaten(self):
+        from zope.testing.loggingsupport import InstalledHandler
         from zope.sendmail.delivery import DirectMailDelivery
         mailer = BrokenMailerStub()
         delivery = DirectMailDelivery(mailer)
@@ -158,10 +159,12 @@ class TestDirectMailDelivery(TestCase):
                        'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
+        log_handler = InstalledHandler('MailDataManager')
         try:
             transaction.commit()
         finally:
             # Clean up after ourselves
+            log_handler.uninstall()
             transaction.abort()
 
     def testRefusingMailerDiesInVote(self):
@@ -342,35 +345,35 @@ class TestQueuedMailDelivery(TestCase):
                        'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
-        self.assertEquals(msgid, '20030519.1234@example.org')
-        self.assertEquals(MaildirWriterStub.commited_messages, [])
-        self.assertEquals(MaildirWriterStub.aborted_messages, [])
+        self.assertEqual(msgid, '20030519.1234@example.org')
+        self.assertEqual(MaildirWriterStub.commited_messages, [])
+        self.assertEqual(MaildirWriterStub.aborted_messages, [])
         transaction.commit()
-        self.assertEquals(MaildirWriterStub.commited_messages,
+        self.assertEqual(MaildirWriterStub.commited_messages,
                           [zope_headers + opt_headers + message])
-        self.assertEquals(MaildirWriterStub.aborted_messages, [])
+        self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
-        self.assert_('@' in msgid)
-        self.assertEquals(MaildirWriterStub.commited_messages, [])
-        self.assertEquals(MaildirWriterStub.aborted_messages, [])
+        self.assertTrue('@' in msgid)
+        self.assertEqual(MaildirWriterStub.commited_messages, [])
+        self.assertEqual(MaildirWriterStub.aborted_messages, [])
         transaction.commit()
-        self.assertEquals(len(MaildirWriterStub.commited_messages), 1)
-        self.assert_(MaildirWriterStub.commited_messages[0].endswith(message))
+        self.assertEqual(len(MaildirWriterStub.commited_messages), 1)
+        self.assertTrue(MaildirWriterStub.commited_messages[0].endswith(message))
         new_headers = MaildirWriterStub.commited_messages[0][:-len(message)]
-        self.assert_(new_headers.find('Message-Id: <%s>' % msgid) != -1)
-        self.assert_(new_headers.find('X-Zope-From: %s' % fromaddr) != 1)
-        self.assert_(new_headers.find('X-Zope-To: %s' % ", ".join(toaddrs)) != 1)
-        self.assertEquals(MaildirWriterStub.aborted_messages, [])
+        self.assertTrue(new_headers.find('Message-Id: <%s>' % msgid) != -1)
+        self.assertTrue(new_headers.find('X-Zope-From: %s' % fromaddr) != 1)
+        self.assertTrue(new_headers.find('X-Zope-To: %s' % ", ".join(toaddrs)) != 1)
+        self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
-        self.assertEquals(MaildirWriterStub.commited_messages, [])
-        self.assertEquals(MaildirWriterStub.aborted_messages, [])
+        self.assertEqual(MaildirWriterStub.commited_messages, [])
+        self.assertEqual(MaildirWriterStub.aborted_messages, [])
         transaction.abort()
-        self.assertEquals(MaildirWriterStub.commited_messages, [])
-        self.assertEquals(len(MaildirWriterStub.aborted_messages), 1)
+        self.assertEqual(MaildirWriterStub.commited_messages, [])
+        self.assertEqual(len(MaildirWriterStub.aborted_messages), 1)
 
 
 def test_suite():

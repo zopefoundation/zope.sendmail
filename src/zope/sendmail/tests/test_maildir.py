@@ -212,7 +212,7 @@ class TestMaildir(unittest.TestCase):
         m = Maildir('/path/to/nosuchfolder', True)
         verifyObject(IMaildir, m)
         dirs = sorted(self.fake_os_module._made_directories)
-        self.assertEquals(dirs, ['/path/to/nosuchfolder',
+        self.assertEqual(dirs, ['/path/to/nosuchfolder',
                                  '/path/to/nosuchfolder/cur',
                                  '/path/to/nosuchfolder/new',
                                  '/path/to/nosuchfolder/tmp'])
@@ -229,7 +229,7 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import Maildir
         m = Maildir('/path/to/maildir')
         messages = sorted(m)
-        self.assertEquals(messages, ['/path/to/maildir/cur/1',
+        self.assertEqual(messages, ['/path/to/maildir/cur/1',
                                      '/path/to/maildir/cur/2',
                                      '/path/to/maildir/new/1',
                                      '/path/to/maildir/new/2'])
@@ -240,7 +240,7 @@ class TestMaildir(unittest.TestCase):
         m = Maildir('/path/to/maildir')
         fd = m.newMessage()
         verifyObject(IMaildirMessageWriter, fd)
-        self.assert_(fd._filename.startswith(
+        self.assertTrue(fd._filename.startswith(
                      '/path/to/maildir/tmp/1234500002.4242.myhostname.'))
 
     def test_newMessage_never_loops(self):
@@ -256,21 +256,21 @@ class TestMaildir(unittest.TestCase):
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
         fd = FakeFile(filename1, 'w')
         writer = MaildirMessageWriter(fd, filename1, filename2)
-        self.assertEquals(writer._fd._filename, filename1)
-        self.assertEquals(writer._fd._mode, 'w')  # TODO or 'wb'?
+        self.assertEqual(writer._fd._filename, filename1)
+        self.assertEqual(writer._fd._mode, 'w')  # TODO or 'wb'?
         print('fee', end='', file=writer)
         writer.write(' fie')
         writer.writelines([' foe', ' foo'])
-        self.assertEquals(writer._fd._written, b'fee fie foe foo')
+        self.assertEqual(writer._fd._written, b'fee fie foe foo')
 
         writer.abort()
-        self.assertEquals(writer._fd._closed, True)
-        self.assert_(filename1 in self.fake_os_module._removed_files)
+        self.assertEqual(writer._fd._closed, True)
+        self.assertTrue(filename1 in self.fake_os_module._removed_files)
         # Once aborted, abort does nothing
         self.fake_os_module._removed_files = ()
         writer.abort()
         writer.abort()
-        self.assertEquals(self.fake_os_module._removed_files, ())
+        self.assertEqual(self.fake_os_module._removed_files, ())
         # Once aborted, commit fails
         self.assertRaises(RuntimeError, writer.commit)
 
@@ -281,18 +281,18 @@ class TestMaildir(unittest.TestCase):
         fd = FakeFile(filename1, 'w')
         writer = MaildirMessageWriter(fd, filename1, filename2)
         writer.commit()
-        self.assertEquals(writer._fd._closed, True)
-        self.assert_((filename1, filename2)
+        self.assertEqual(writer._fd._closed, True)
+        self.assertTrue((filename1, filename2)
                        in self.fake_os_module._renamed_files)
         # Once commited, commit does nothing
         self.fake_os_module._renamed_files = ()
         writer.commit()
         writer.commit()
-        self.assertEquals(self.fake_os_module._renamed_files, ())
+        self.assertEqual(self.fake_os_module._renamed_files, ())
         # Once commited, abort does nothing
         writer.abort()
         writer.abort()
-        self.assertEquals(self.fake_os_module._renamed_files, ())
+        self.assertEqual(self.fake_os_module._renamed_files, ())
 
     def test_message_writer_unicode(self):
         from zope.sendmail.maildir import MaildirMessageWriter
@@ -300,12 +300,12 @@ class TestMaildir(unittest.TestCase):
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
         fd = FakeFile(filename1, 'w')
         writer = MaildirMessageWriter(fd, filename1, filename2)
-        self.assertEquals(writer._fd._filename, filename1)
-        self.assertEquals(writer._fd._mode, 'w')  # TODO or 'wb'?
+        self.assertEqual(writer._fd._filename, filename1)
+        self.assertEqual(writer._fd._mode, 'w')  # TODO or 'wb'?
         print(u'fe\xe8', end='', file=writer)
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
-        self.assertEquals(writer._fd._written,
+        self.assertEqual(writer._fd._written,
                           b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
 
 

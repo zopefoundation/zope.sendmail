@@ -94,11 +94,11 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
     def testDirectDelivery(self):
         delivery = zope.component.getUtility(IMailDelivery, "Mail2")
         self.assertEqual('DirectMailDelivery', delivery.__class__.__name__)
-        self.assert_(self.testMailer is delivery.mailer)
+        self.assertTrue(self.testMailer is delivery.mailer)
 
     def testSMTPMailer(self):
         mailer = zope.component.getUtility(IMailer, "smtp")
-        self.assert_(ISMTPMailer.providedBy(mailer))
+        self.assertTrue(ISMTPMailer.providedBy(mailer))
 
 
 def test_suite():

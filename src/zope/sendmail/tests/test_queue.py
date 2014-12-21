@@ -47,7 +47,7 @@ class TestQueueProcessorThread(TestCase):
         shutil.rmtree(self.dir)
 
     def test_threadName(self):
-        self.assertEquals(self.thread.getName(),
+        self.assertEqual(self.thread.getName(),
                           "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
@@ -57,9 +57,9 @@ class TestQueueProcessorThread(TestCase):
                '\n'
                'Body\n')
         f, t, m = self.thread._parseMessage(hdr + msg)
-        self.assertEquals(f, 'foo@example.com')
-        self.assertEquals(t, ('bar@example.com', 'baz@example.com'))
-        self.assertEquals(m, msg)
+        self.assertEqual(f, 'foo@example.com')
+        self.assertEqual(t, ('bar@example.com', 'baz@example.com'))
+        self.assertEqual(m, msg)
 
     def test_deliveration(self):
         self.filename = os.path.join(self.dir, 'message')
@@ -69,12 +69,12 @@ class TestQueueProcessorThread(TestCase):
                        b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
-        self.assertEquals(self.mailer.sent_messages,
+        self.assertEqual(self.mailer.sent_messages,
                           [('foo@example.com',
                             ('bar@example.com', 'baz@example.com'),
                             'Header: value\n\nBody\n')])
-        self.failIf(os.path.exists(self.filename), 'File exists')
-        self.assertEquals(self.thread.log.infos,
+        self.assertFalse(os.path.exists(self.filename), 'File exists')
+        self.assertEqual(self.thread.log.infos,
                           [('Mail from %s to %s sent.',
                             ('foo@example.com',
                              'bar@example.com, baz@example.com'),
@@ -89,7 +89,7 @@ class TestQueueProcessorThread(TestCase):
                        b'Header: value\n\nBody\n')
         self.md.files.append(self.filename)
         self.thread.run(forever=False)
-        self.assertEquals(self.thread.log.errors,
+        self.assertEqual(self.thread.log.errors,
                           [('Error while sending mail from %s to %s.',
                             ('foo@example.com',
                              'bar@example.com, baz@example.com'),
@@ -107,8 +107,8 @@ class TestQueueProcessorThread(TestCase):
         self.thread.run(forever=False)
 
         # File must remail were it was, so it will be retried
-        self.failUnless(os.path.exists(self.filename))
-        self.assertEquals(self.thread.log.errors,
+        self.assertTrue(os.path.exists(self.filename))
+        self.assertEqual(self.thread.log.errors,
                           [('Error while sending mail from %s to %s.',
                             ('foo@example.com',
                              'bar@example.com, baz@example.com'),
@@ -126,10 +126,10 @@ class TestQueueProcessorThread(TestCase):
         self.thread.run(forever=False)
 
         # File must be moved aside
-        self.failIf(os.path.exists(self.filename))
-        self.failUnless(os.path.exists(os.path.join(self.dir,
+        self.assertFalse(os.path.exists(self.filename))
+        self.assertTrue(os.path.exists(os.path.join(self.dir,
                                                     '.rejected-message')))
-        self.assertEquals(self.thread.log.errors,
+        self.assertEqual(self.thread.log.errors,
                           [('Discarding email from %s to %s due to a '
                             'permanent error: %s',
                             ('foo@example.com',
@@ -149,10 +149,10 @@ class TestQueueProcessorThread(TestCase):
         self.thread.run(forever=False)
 
         # File must be moved aside
-        self.failIf(os.path.exists(self.filename))
-        self.failUnless(os.path.exists(os.path.join(self.dir,
+        self.assertFalse(os.path.exists(self.filename))
+        self.assertTrue(os.path.exists(os.path.join(self.dir,
                                                     '.rejected-message')))
-        self.assertEquals(self.thread.log.errors,
+        self.assertEqual(self.thread.log.errors,
                           [('Email recipients refused: %s',
                            ('bar@example.com',), {})])
 
@@ -187,14 +187,14 @@ class TestConsoleApp(TestCase):
         # simplest case that works
         cmdline = "zope-sendmail %s" % self.dir
         app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertEquals("zope-sendmail", app.script_name)
-        self.assertEquals(self.dir, app.queue_path)
+        self.assertEqual("zope-sendmail", app.script_name)
+        self.assertEqual(self.dir, app.queue_path)
         self.assertFalse(app.daemon)
-        self.assertEquals(3, app.interval)
-        self.assertEquals("localhost", app.hostname)
-        self.assertEquals(25, app.port)
-        self.assertEquals(None, app.username)
-        self.assertEquals(None, app.password)
+        self.assertEqual(3, app.interval)
+        self.assertEqual("localhost", app.hostname)
+        self.assertEqual(25, app.port)
+        self.assertEqual(None, app.username)
+        self.assertEqual(None, app.password)
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
 
@@ -210,14 +210,14 @@ class TestConsoleApp(TestCase):
             "--username chris --password rossi --force-tls " \
             "%s" % self.dir
         app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertEquals("zope-sendmail", app.script_name)
-        self.assertEquals(self.dir, app.queue_path)
+        self.assertEqual("zope-sendmail", app.script_name)
+        self.assertEqual(self.dir, app.queue_path)
         self.assertTrue(app.daemon)
-        self.assertEquals(7, app.interval)
-        self.assertEquals("foo", app.hostname)
-        self.assertEquals(75, app.port)
-        self.assertEquals("chris", app.username)
-        self.assertEquals("rossi", app.password)
+        self.assertEqual(7, app.interval)
+        self.assertEqual("foo", app.hostname)
+        self.assertEqual(75, app.port)
+        self.assertEqual("chris", app.username)
+        self.assertEqual("rossi", app.password)
         self.assertTrue(app.force_tls)
         self.assertFalse(app.no_tls)
 
@@ -240,14 +240,14 @@ class TestConsoleApp(TestCase):
         # override most everything
         cmdline = """zope-sendmail --config %s""" % ini_path
         app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertEquals("zope-sendmail", app.script_name)
-        self.assertEquals("hammer/dont/hurt/em", app.queue_path)
+        self.assertEqual("zope-sendmail", app.script_name)
+        self.assertEqual("hammer/dont/hurt/em", app.queue_path)
         self.assertFalse(app.daemon)
-        self.assertEquals(33, app.interval)
-        self.assertEquals("testhost", app.hostname)
-        self.assertEquals(2525, app.port)
-        self.assertEquals("Chris", app.username)
-        self.assertEquals("Rossi", app.password)
+        self.assertEqual(33, app.interval)
+        self.assertEqual("testhost", app.hostname)
+        self.assertEqual(2525, app.port)
+        self.assertEqual("Chris", app.username)
+        self.assertEqual("Rossi", app.password)
         self.assertFalse(app.force_tls)
         self.assertTrue(app.no_tls)
         # override nothing, make sure defaults come through
@@ -255,14 +255,14 @@ class TestConsoleApp(TestCase):
             f.write("[app:zope-sendmail]\n\nqueue_path=foo\n")
         cmdline = """zope-sendmail --config %s %s""" % (ini_path, self.dir)
         app = ConsoleApp(cmdline.split(), verbose=False)
-        self.assertEquals("zope-sendmail", app.script_name)
-        self.assertEquals(self.dir, app.queue_path)
+        self.assertEqual("zope-sendmail", app.script_name)
+        self.assertEqual(self.dir, app.queue_path)
         self.assertFalse(app.daemon)
-        self.assertEquals(3, app.interval)
-        self.assertEquals("localhost", app.hostname)
-        self.assertEquals(25, app.port)
-        self.assertEquals(None, app.username)
-        self.assertEquals(None, app.password)
+        self.assertEqual(3, app.interval)
+        self.assertEqual("localhost", app.hostname)
+        self.assertEqual(25, app.port)
+        self.assertEqual(None, app.username)
+        self.assertEqual(None, app.password)
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
 
