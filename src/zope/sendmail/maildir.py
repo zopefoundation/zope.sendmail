@@ -16,7 +16,6 @@
 import errno
 import os
 import random
-import six
 import socket
 import time
 
@@ -24,6 +23,7 @@ from zope.interface import implementer, provider
 
 from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
+from zope.sendmail._compat import text_type
 
 @provider(IMaildirFactory)
 @implementer(IMaildir)
@@ -110,7 +110,7 @@ class Maildir(object):
 
 
 def _encode_utf8(s):
-    if isinstance(s, six.text_type):
+    if isinstance(s, text_type):
         s = s.encode('utf-8')
     return s
 

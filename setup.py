@@ -58,7 +58,6 @@ setup(name='zope.sendmail',
       extras_require=dict(test=tests_require),
       install_requires=[
         'setuptools',
-        'six',
         'transaction',
         'zope.i18nmessageid',
         'zope.interface',
