@@ -5,7 +5,6 @@ python:
     - 2.7
     - 3.3
 install:
-    - pip install -U zope.interface
     - pip install .
 script:
     - python setup.py test -q
