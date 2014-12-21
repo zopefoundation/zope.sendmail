@@ -17,6 +17,7 @@
 # Zope Toolkit policies as described by this documentation.
 ##############################################################################
 """Setup for zope.sendmail package"""
+import os
 from setuptools import setup, find_packages
 
 tests_require=[
@@ -24,17 +25,24 @@ tests_require=[
     'zope.testing',
     ]
 
+
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
+long_description=(
+        read('README.rst')
+        + '\n' +
+        read('CHANGES.rst')
+        )
+
 setup(name='zope.sendmail',
-      version='4.0.0a3.dev0',
+      version='4.0.0.dev0',
       url='http://pypi.python.org/pypi/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
       author='Zope Foundation and Contributors',
       author_email='zope-dev@zope.org',
-      long_description='\n\n'.join([
-          open('README.txt').read(),
-          open('CHANGES.txt').read(),
-          ]),
+      long_description=long_description,
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Web Environment',
