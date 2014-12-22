@@ -20,20 +20,22 @@
 import os
 from setuptools import setup, find_packages
 
-tests_require=[
+tests_require = [
     'zope.security',
     'zope.testing',
-    ]
+]
 
 
 def read(*rnames):
-    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+    with open(os.path.join(os.path.dirname(__file__), *rnames)) as f:
+        return f.read()
 
-long_description=(
-        read('README.rst')
-        + '\n' +
-        read('CHANGES.rst')
-        )
+
+long_description = (
+    read('README.rst')
+    + '\n' +
+    read('CHANGES.rst')
+)
 
 setup(name='zope.sendmail',
       version='4.0.1.dev0',
@@ -54,7 +56,9 @@ setup(name='zope.sendmail',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.3',
+          'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: Implementation :: CPython',
+          'Programming Language :: Python :: Implementation :: PyPy',
           'Operating System :: OS Independent',
           'Topic :: Internet :: WWW/HTTP',
           'Topic :: Communications :: Email',
@@ -62,23 +66,23 @@ setup(name='zope.sendmail',
       ],
       packages=find_packages('src'),
       package_dir={'': 'src'},
-      namespace_packages=['zope',],
+      namespace_packages=['zope'],
       extras_require=dict(test=tests_require),
       install_requires=[
-        'setuptools',
-        'transaction',
-        'zope.i18nmessageid',
-        'zope.interface',
-        'zope.schema',
-        # it's only needed for vocabulary, zcml and tests
-        'zope.component>=3.8.0',
-        # these are only needed for zcml
-        'zope.configuration',
-        ],
+          'setuptools',
+          'transaction',
+          'zope.i18nmessageid',
+          'zope.interface',
+          'zope.schema',
+          # it's only needed for vocabulary, zcml and tests
+          'zope.component>=3.8.0',
+          # these are only needed for zcml
+          'zope.configuration',
+      ],
       tests_require=tests_require,
-      test_suite = 'zope.sendmail.tests',
-      include_package_data = True,
-      zip_safe = False,
+      test_suite='zope.sendmail.tests',
+      include_package_data=True,
+      zip_safe=False,
       entry_points="""
       [console_scripts]
       zope-sendmail = zope.sendmail.queue:run
