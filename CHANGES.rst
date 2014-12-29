@@ -1,10 +1,10 @@
 Changes
 =======
 
-4.0.1 (Unreleased)
+4.0.1 (unreleased)
 ------------------
 
-- TBD
+- Add support for PyPy3.
 
 4.0.0 (2014-12-20)
 ------------------
