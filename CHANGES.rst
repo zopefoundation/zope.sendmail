@@ -1,5 +1,4 @@
-=======
-CHANGES
+Changes
 =======
 
 4.0.1 (Unreleased)
@@ -10,60 +9,60 @@ CHANGES
 4.0.0 (2014-12-20)
 ------------------
 
-- Tested on Travis-CI against supported Python verisons.
+- Add support for testing on Travis-CI against supported Python verisons.
 
-- Dropped use of ``zope.testrunner`` for testing.
+- Drop use of ``zope.testrunner`` for testing.
 
-- Dropped dependency on ``six``.
+- Drop dependency on ``six``.
 
-- Replaced doctests with equivalent unittests.
+- Replace doctests with equivalent unittests.
 
 
 4.0.0a2 (2013-02-26)
 --------------------
 
-- Fixed license Trove classifier.
+- Fix license Trove classifier.
 
 
 4.0.0a1 (2013-02-25)
 --------------------
 
-- Added support for Python 3.3.
+- Add support for Python 3.3.
 
-- Deleted event fossils (interfaces ``zope.sendmail.interfaces.IMailSent`` and
+- Delete event fossils (interfaces ``zope.sendmail.interfaces.IMailSent`` and
   ``zope.sendmail.interfaces.IMailError``. plus the ``zope.sendmail.events``
   module and associated tests).  These events were never emitted, and couldn't
   have been used safely even if they had been, due to two-phase commit.
   https://bugs.launchpad.net/zope3/+bug/177739
 
-- Replaced deprecated ``zope.interface.classProvides`` usage with equivalent
+- Replace deprecated ``zope.interface.classProvides`` usage with equivalent
   ``zope.interface.provider`` decorator.
 
-- Replaced deprecated ``zope.interface.implements`` usage with equivalent
+- Replace deprecated ``zope.interface.implements`` usage with equivalent
   ``zope.interface.implementer`` decorator.
 
-- Dropped support for Python 2.4 and 2.5.
+- Drop support for Python 2.4 and 2.5.
 
-- Added a vote method to Mailer implementations to allow them to abort a
+- Add a vote method to Mailer implementations to allow them to abort a
   transaction if it is known to be unsafe.
 
-- Prevented fatal errors in mail delivery causing potential database corruption.
+- Prevent fatal errors in mail delivery causing potential database corruption.
 
-- Added not declared, but needed test dependency on `zope.component [test]`.
+- Add not declared, but needed test dependency on `zope.component [test]`.
 
-- Added handling for unicode usernames and passwords, encoding them to UTF-8.
+- Add handling for unicode usernames and passwords, encoding them to UTF-8.
   Fix for https://bugs.launchpad.net/zope.sendmail/+bug/597143
 
-- Gave the background queue processor thread a name.
+- Give the background queue processor thread a name.
 
-- Documented the ini file keys for ``zope-sendmail --config`` in the help
+- Document the ini file keys for ``zope-sendmail --config`` in the help
   message printed by ``zope-sendmail --help``.  Also rewrote the command-line
   parsing to use optparse (not argparse, since Python 2.6 is still supported).
 
 3.7.5 (2012-05-23)
 ------------------
 
-- Ensured that the 'queuedDelivery' directive has the same discriminator
+- Ensure that the 'queuedDelivery' directive has the same discriminator
   as the 'directDelivery' directive (they are mutually incompatible).
   https://bugs.launchpad.net/zope.sendmail/+bug/191143
 
@@ -79,12 +78,12 @@ CHANGES
 3.7.3 (2010-09-25)
 ------------------
 
-- Added not declared, but needed test dependency on `zope.component [test]`.
+- Add not declared, but needed test dependency on `zope.component [test]`.
 
 3.7.2 (2010-04-30)
 ------------------
 
-- Removed no longer required testing dependency on zope.testing.
+- Remove no longer required testing dependency on zope.testing.
 
 - Maildir storage for queue can now handle unicode passed in for message or
   to/from addresses (change backported from repoze.sendmail).
@@ -100,7 +99,7 @@ CHANGES
 3.7.0 (2010-01-12)
 ------------------
 
-- Removed dependency on ``zope.security``: the security support is optional,
+- Remove dependency on ``zope.security``: the security support is optional,
   and only available if the ``zope.security`` package is available. This change
   is similar to the optional security support introduced in ``zope.component``
   3.8.0, and in fact it uses the same helpers.
@@ -108,7 +107,7 @@ CHANGES
 - Sort by modification time the messages in zope.sendmail.maildir so earlier
   messages are sent before later messages during queue processing.
 
-- Added the new parameter ``processorThread`` to the queuedDelivery ZCML
+- Add the new parameter ``processorThread`` to the queuedDelivery ZCML
   directive: if False, the QueueProcessorThread is not started and thus an
   independent process must process the queue; it defaults to True for b/c.
 
@@ -139,7 +138,7 @@ CHANGES
 3.5.1 (2009-01-26)
 ------------------
 
-- Copied over the UtilityTerm and UtilityVocabulary implementation from
+- Copyover the UtilityTerm and UtilityVocabulary implementation from
   zope.app.component to avoid a dependency.
 
 - Work around a problem when smtp quit fails, the mail was considered not
@@ -160,7 +159,7 @@ CHANGES
 3.5.0b1 (2007-11-08)
 --------------------
 
-- Added README.txt
+- Add README.txt
 - Can now talk to servers that don't implement EHLO
 - Fix bug that caused files with very long names to be created
 - Fix for https://bugs.launchpad.net/zope3/+bug/157104: move aside mail that's
@@ -170,7 +169,7 @@ CHANGES
 3.5.0a2 (2007-10-23)
 --------------------
 
-- Cleaned up ``does_esmtp`` in faux SMTP connection classes provided by the
+- Clean up ``does_esmtp`` in faux SMTP connection classes provided by the
   tests.
 - If the ``QueueProcessorThread`` is asked to stop while sending messages, do
   so after sending the current message; previously if there were many, many

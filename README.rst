@@ -1,6 +1,5 @@
-=============
-zope.sendmail
-=============
+``zope.sendmail``
+=================
 
 .. image:: https://travis-ci.org/zopefoundation/zope.sendmail.png?branch=master
         :target: https://travis-ci.org/zopefoundation/zope.sendmail
