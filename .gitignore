@@ -4,6 +4,7 @@ src/*.egg-info
 
 .installed.cfg
 .tox
-bin
-develop-eggs
-parts
+bin/
+develop-eggs/
+eggs/
+parts/
