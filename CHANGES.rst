@@ -8,6 +8,8 @@ Changes
 
 - Drop support for Python 2.6.
 
+- Declare explicit dependency on ``pywin32`` on Windows.
+
 
 4.0.1 (2014-12-29)
 ------------------

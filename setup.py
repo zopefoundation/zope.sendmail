@@ -20,10 +20,15 @@
 import os
 from setuptools import setup, find_packages
 
-tests_require = [
+TESTS_REQUIRE = [
     'zope.security',
     'zope.testing',
 ]
+
+EXTRAS_REQUIRE = {
+    'test': TESTS_REQUIRE,
+    ':sys_platform == "win32"': ['pywin32'],
+}
 
 
 def read(*rnames):
@@ -31,7 +36,7 @@ def read(*rnames):
         return f.read()
 
 
-long_description = (
+LONG_DESCRIPTION = (
     read('README.rst')
     + '\n' +
     read('CHANGES.rst')
@@ -44,7 +49,7 @@ setup(name='zope.sendmail',
       description='Zope sendmail',
       author='Zope Foundation and Contributors',
       author_email='zope-dev@zope.org',
-      long_description=long_description,
+      long_description=LONG_DESCRIPTION,
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Environment :: Web Environment',
@@ -67,7 +72,7 @@ setup(name='zope.sendmail',
       packages=find_packages('src'),
       package_dir={'': 'src'},
       namespace_packages=['zope'],
-      extras_require=dict(test=tests_require),
+      extras_require=EXTRAS_REQUIRE,
       install_requires=[
           'setuptools',
           'transaction',
@@ -79,7 +84,7 @@ setup(name='zope.sendmail',
           # these are only needed for zcml
           'zope.configuration',
       ],
-      tests_require=tests_require,
+      tests_require=TESTS_REQUIRE,
       test_suite='zope.sendmail.tests',
       include_package_data=True,
       zip_safe=False,
