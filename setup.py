@@ -27,7 +27,9 @@ TESTS_REQUIRE = [
 
 EXTRAS_REQUIRE = {
     'test': TESTS_REQUIRE,
-    ':sys_platform == "win32"': ['pywin32'],
+#   ':sys_platform == "win32"': ['pywin32'],
+#   Because https://sourceforge.net/p/pywin32/bugs/680/
+    ':sys_platform == "win32"': ['pypiwin32'],
 }
 
 
