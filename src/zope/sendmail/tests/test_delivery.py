@@ -46,6 +46,8 @@ class TestMailDataManager(TestCase):
         verifyObject(IDataManager, manager)
         self.assertEqual(manager.callable, object)
         self.assertEqual(manager.args, (1, 2))
+        # required by IDataManager
+        self.assertTrue(isinstance(manager.sortKey(), str))
 
     def test_successful_commit(self):
         #Regression test for http://www.zope.org/Collectors/Zope3-dev/590

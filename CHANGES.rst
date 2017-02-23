@@ -4,6 +4,10 @@ Changes
 4.1.0 (unreleased)
 ------------------
 
+- Make the data manager sort key a string, this fixes Python 3 where
+  strings and integers are not sortable. This would happen when using
+  other data managers with string sort keys.
+
 - Add support for Python 3.5.
 
 - Drop support for Python 2.6.
