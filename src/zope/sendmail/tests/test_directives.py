@@ -33,16 +33,7 @@ import zope.sendmail.tests
 
 
 class MaildirStub(object):
-
-    def __init__(self, path, create=False):
-        self.path = path
-        self.create = create
-
-    def __iter__(self):
-        return iter(())
-
-    def newMessage(self):
-        return None
+    pass
 
 @implementer(IMailer)
 class Mailer(object):
@@ -102,9 +93,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
 
 def test_suite():
-    return unittest.TestSuite((
-        unittest.makeSuite(DirectivesTest),
-        ))
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
 
 if __name__ == '__main__':
     unittest.main()
