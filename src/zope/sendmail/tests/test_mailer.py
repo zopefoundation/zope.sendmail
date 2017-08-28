@@ -178,3 +178,6 @@ class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
 
     test_send_auth_unicode = test_send_auth
     test_send_auth_nonascii = test_send_auth
+
+def test_suite():
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)

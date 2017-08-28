@@ -16,7 +16,7 @@
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
 import smtplib
-from unittest import TestCase, TestSuite, makeSuite
+import unittest
 
 import transaction
 from zope.interface import implementer
@@ -37,7 +37,7 @@ class MailerStub(object):
     vote = None
 
 
-class TestMailDataManager(TestCase):
+class TestMailDataManager(unittest.TestCase):
 
     def testInterface(self):
         from transaction.interfaces import IDataManager
@@ -50,15 +50,15 @@ class TestMailDataManager(TestCase):
         self.assertTrue(isinstance(manager.sortKey(), str))
 
     def test_successful_commit(self):
-        #Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+        # Regression test for http://www.zope.org/Collectors/Zope3-dev/590
         from zope.sendmail.delivery import MailDataManager
 
         _success = []
         def _on_success(*args):
             _success.append(args)
-        _abort = []
+
         def _on_abort(*args):
-            _abort.append(args)
+            self.fail("Should not abort")
 
         manager = MailDataManager(_on_success, ('foo', 'bar'),
                                   onAbort=_on_abort)
@@ -68,19 +68,18 @@ class TestMailDataManager(TestCase):
         manager.tpc_vote(xact)
         manager.tpc_finish(xact)
         self.assertEqual(_success, [('foo', 'bar')])
-        self.assertEqual(_abort, [])
+
 
     def test_unsuccessful_commit(self):
-        #Regression test for http://www.zope.org/Collectors/Zope3-dev/590
+        # Regression test for http://www.zope.org/Collectors/Zope3-dev/590
         from zope.sendmail.delivery import MailDataManager
 
         _success = []
         _abort = []
 
-        _success = []
         def _on_success(*args):
-            _success.append(args)
-        _abort = []
+            self.fail("Should not succeed")
+
         def _on_abort(*args):
             _abort.append(args)
         manager = MailDataManager(_on_success, ('foo', 'bar'),
@@ -91,10 +90,9 @@ class TestMailDataManager(TestCase):
         manager.tpc_vote(xact)
         manager.tpc_abort(xact)
         self.assertEqual(_success, [])
-        self.assertEqual(_abort, [()])
 
 
-class TestDirectMailDelivery(TestCase):
+class TestDirectMailDelivery(unittest.TestCase):
 
     def testInterface(self):
         from zope.sendmail.interfaces import IDirectMailDelivery
@@ -115,16 +113,16 @@ class TestDirectMailDelivery(TestCase):
                        'To: some-zope-coders:;\n'
                        'Date: Mon, 19 May 2003 10:17:36 -0400\n'
                        'Message-Id: <20030519.1234@example.org>\n')
-        message =     ('Subject: example\n'
-                       '\n'
-                       'This is just an example\n')
+        message = ('Subject: example\n'
+                   '\n'
+                   'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(msgid, '20030519.1234@example.org')
         self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
         self.assertEqual(mailer.sent_messages,
-                          [(fromaddr, toaddrs, opt_headers + message)])
+                         [(fromaddr, toaddrs, opt_headers + message)])
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
@@ -156,18 +154,15 @@ class TestDirectMailDelivery(TestCase):
                        'To: some-zope-coders:;\n'
                        'Date: Mon, 19 May 2003 10:17:36 -0400\n'
                        'Message-Id: <20030519.1234@example.org>\n')
-        message =     ('Subject: example\n'
-                       '\n'
-                       'This is just an example\n')
+        message = ('Subject: example\n'
+                   '\n'
+                   'This is just an example\n')
 
-        msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
+        delivery.send(fromaddr, toaddrs, opt_headers + message)
         log_handler = InstalledHandler('MailDataManager')
-        try:
-            transaction.commit()
-        finally:
-            # Clean up after ourselves
-            log_handler.uninstall()
-            transaction.abort()
+        self.addCleanup(log_handler.uninstall)
+        self.addCleanup(transaction.abort)
+        transaction.commit()
 
     def testRefusingMailerDiesInVote(self):
         from zope.sendmail.delivery import DirectMailDelivery
@@ -180,26 +175,17 @@ class TestDirectMailDelivery(TestCase):
                        'To: some-zope-coders:;\n'
                        'Date: Mon, 19 May 2003 10:17:36 -0400\n'
                        'Message-Id: <20030519.1234@example.org>\n')
-        message =     ('Subject: example\n'
-                       '\n'
-                       'This is just an example\n')
+        message = ('Subject: example\n'
+                   '\n'
+                   'This is just an example\n')
 
-        msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
-        try:
-            try:
-                transaction.commit()
-            except:
-                if transaction.get()._voted:
-                    # We voted for commit then failed, reraise
-                    raise
-                else:
-                    # We vetoed a commit, that's good.
-                    pass
-            else:
-                self.fail("Did not raise an exception in vote")
-        finally:
-            # Clean up after ourselves
-            transaction.abort()
+        delivery.send(fromaddr, toaddrs, opt_headers + message)
+        self.addCleanup(transaction.abort)
+
+        with self.assertRaises(Exception):
+            transaction.commit()
+        self.assertFalse(transaction.get()._voted,
+                         "We voted for commit then failed, reraise")
 
 class MaildirWriterStub(object):
 
@@ -207,16 +193,16 @@ class MaildirWriterStub(object):
     commited_messages = []  # this list is shared among all instances
     aborted_messages = []   # this one too
     _closed = False
+    _commited = False
+    _aborted = False
 
-    def write(self, str):
+    def write(self, data):
         if self._closed:
             raise AssertionError('already closed')
-        self.data += str
+        self.data += data
 
     def writelines(self, seq):
-        if self._closed:
-            raise AssertionError('already closed')
-        self.data += ''.join(seq)
+        raise NotImplementedError()
 
     def close(self):
         self._closed = True
@@ -260,7 +246,7 @@ class LoggerStub(object):
         self.errors = []
 
     def getLogger(self, name):
-        return self
+        raise NotImplementedError()
 
     def error(self, msg, *args, **kwargs):
         self.errors.append((msg, args, kwargs))
@@ -296,7 +282,7 @@ class RefusingMailerStub(object):
         raise BizzarreMailError("bad things happened while sending mail")
 
     def send(self, fromaddr, toaddrs, message):
-        return
+        raise NotImplementedError()
 
     abort = None
 
@@ -307,10 +293,10 @@ class SMTPResponseExceptionMailerStub(object):
         self.code = code
 
     def send(self, fromaddr, toaddrs, message):
-        raise smtplib.SMTPResponseException(self.code,  'Serious Error')
+        raise smtplib.SMTPResponseException(self.code, 'Serious Error')
 
 
-class TestQueuedMailDelivery(TestCase):
+class TestQueuedMailDelivery(unittest.TestCase):
 
     def setUp(self):
         import zope.sendmail.delivery as mail_delivery_module
@@ -337,14 +323,14 @@ class TestQueuedMailDelivery(TestCase):
         toaddrs = ('guido@example.com',
                    'steve@examplecom')
         zope_headers = ('X-Zope-From: jim@example.com\n'
-                       'X-Zope-To: guido@example.com, steve@examplecom\n')
+                        'X-Zope-To: guido@example.com, steve@examplecom\n')
         opt_headers = ('From: Jim <jim@example.org>\n'
                        'To: some-zope-coders:;\n'
                        'Date: Mon, 19 May 2003 10:17:36 -0400\n'
                        'Message-Id: <20030519.1234@example.org>\n')
-        message =     ('Subject: example\n'
-                       '\n'
-                       'This is just an example\n')
+        message = ('Subject: example\n'
+                   '\n'
+                   'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(msgid, '20030519.1234@example.org')
@@ -352,7 +338,7 @@ class TestQueuedMailDelivery(TestCase):
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
         transaction.commit()
         self.assertEqual(MaildirWriterStub.commited_messages,
-                          [zope_headers + opt_headers + message])
+                         [zope_headers + opt_headers + message])
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []
@@ -379,8 +365,4 @@ class TestQueuedMailDelivery(TestCase):
 
 
 def test_suite():
-    return TestSuite((
-        makeSuite(TestMailDataManager),
-        makeSuite(TestDirectMailDelivery),
-        makeSuite(TestQueuedMailDelivery),
-        ))
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
