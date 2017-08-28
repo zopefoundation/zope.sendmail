@@ -23,12 +23,13 @@ from setuptools import setup, find_packages
 TESTS_REQUIRE = [
     'zope.security',
     'zope.testing',
+    'zope.testrunner',
 ]
 
 EXTRAS_REQUIRE = {
     'test': TESTS_REQUIRE,
-#   ':sys_platform == "win32"': ['pywin32'],
-#   Because https://sourceforge.net/p/pywin32/bugs/680/
+    #':sys_platform == "win32"': ['pywin32'],
+    # Because https://sourceforge.net/p/pywin32/bugs/680/
     ':sys_platform == "win32"': ['pypiwin32'],
 }
 
@@ -46,7 +47,7 @@ LONG_DESCRIPTION = (
 
 setup(name='zope.sendmail',
       version='4.1.0.dev0',
-      url='http://pypi.python.org/pypi/zope.sendmail',
+      url='http://github.com/zopefoundation/zope.sendmail',
       license='ZPL 2.1',
       description='Zope sendmail',
       author='Zope Foundation and Contributors',
@@ -61,9 +62,9 @@ setup(name='zope.sendmail',
           'Programming Language :: Python :: 2',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.3',
           'Programming Language :: Python :: 3.4',
           'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: Implementation :: CPython',
           'Programming Language :: Python :: Implementation :: PyPy',
           'Operating System :: OS Independent',
@@ -94,4 +95,4 @@ setup(name='zope.sendmail',
       [console_scripts]
       zope-sendmail = zope.sendmail.queue:run
       """
-      )
+)

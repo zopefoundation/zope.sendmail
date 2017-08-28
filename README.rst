@@ -1,8 +1,20 @@
-``zope.sendmail``
-=================
+===============
+ zope.sendmail
+===============
+
+.. image:: https://img.shields.io/pypi/v/zope.sendmail.svg
+        :target: https://pypi.python.org/pypi/zope.sendmail/
+        :alt: Latest release
+
+.. image:: https://img.shields.io/pypi/pyversions/zope.sendmail.svg
+        :target: https://pypi.org/project/zope.sendmail/
+        :alt: Supported Python versions
 
 .. image:: https://travis-ci.org/zopefoundation/zope.sendmail.png?branch=master
         :target: https://travis-ci.org/zopefoundation/zope.sendmail
+
+.. image:: https://coveralls.io/repos/github/zopefoundation/zope.sendmail/badge.svg?branch=master
+        :target: https://coveralls.io/github/zopefoundation/zope.sendmail?branch=master
 
 zope.sendmail is a package for email sending from Zope 3 applications.
 Email sending from Zope 3 applications works as follows:
