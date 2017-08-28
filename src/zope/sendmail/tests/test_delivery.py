@@ -21,8 +21,11 @@ import unittest
 import transaction
 from zope.interface import implementer
 from zope.interface.verify import verifyObject
-from zope.sendmail.interfaces import IMailer
 
+from zope.sendmail.interfaces import IMailer
+from zope.sendmail.interfaces import IDirectMailDelivery
+from zope.sendmail.delivery import AbstractMailDelivery
+from zope.sendmail.delivery import DirectMailDelivery
 
 @implementer(IMailer)
 class MailerStub(object):
@@ -92,18 +95,33 @@ class TestMailDataManager(unittest.TestCase):
         self.assertEqual(_success, [])
 
 
+class TestAbstractMailDelivery(unittest.TestCase):
+
+    def test_bad_message_id(self):
+        class Parser(object):
+            def parsestr(self, s):
+                return {'Message-Id': 'bad id'}
+
+        import email.parser
+        orig_parser = email.parser.Parser
+        self.addCleanup(setattr, email.parser, 'Parser', orig_parser)
+        email.parser.Parser = Parser
+
+        delivery = AbstractMailDelivery()
+        with self.assertRaisesRegexp(ValueError,
+                                     "Malformed Message-Id header"):
+            delivery.send(None, None, None)
+
+
 class TestDirectMailDelivery(unittest.TestCase):
 
     def testInterface(self):
-        from zope.sendmail.interfaces import IDirectMailDelivery
-        from zope.sendmail.delivery import DirectMailDelivery
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         verifyObject(IDirectMailDelivery, delivery)
         self.assertEqual(delivery.mailer, mailer)
 
     def testSend(self):
-        from zope.sendmail.delivery import DirectMailDelivery
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
@@ -144,7 +162,6 @@ class TestDirectMailDelivery(unittest.TestCase):
 
     def testBrokenMailerErrorsAreEaten(self):
         from zope.testing.loggingsupport import InstalledHandler
-        from zope.sendmail.delivery import DirectMailDelivery
         mailer = BrokenMailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
@@ -165,7 +182,6 @@ class TestDirectMailDelivery(unittest.TestCase):
         transaction.commit()
 
     def testRefusingMailerDiesInVote(self):
-        from zope.sendmail.delivery import DirectMailDelivery
         mailer = RefusingMailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
@@ -186,6 +202,26 @@ class TestDirectMailDelivery(unittest.TestCase):
             transaction.commit()
         self.assertFalse(transaction.get()._voted,
                          "We voted for commit then failed, reraise")
+
+    def test_old_mailer_without_vote(self):
+        import warnings
+
+        class OldMailer(object):
+            def send(self):
+                raise NotImplementedError()
+            abort = send
+
+        delivery = DirectMailDelivery(OldMailer())
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter('always')
+
+            mdm = delivery.createDataManager("from", (), "msg")
+            mdm.tpc_vote(None)
+
+        self.assertEqual(1, len(w))
+        self.assertIn("does not provide a vote method", str(w[0]))
+
+
 
 class MaildirWriterStub(object):
 
