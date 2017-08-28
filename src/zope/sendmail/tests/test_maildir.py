@@ -22,6 +22,8 @@ import errno
 
 from zope.interface.verify import verifyObject
 
+from zope.sendmail.maildir import Maildir
+from zope.sendmail.interfaces import IMaildirMessageWriter
 
 class FakeSocketModule(object):
 
@@ -185,7 +187,6 @@ class TestMaildir(unittest.TestCase):
 
     def test_factory(self):
         from zope.sendmail.interfaces import IMaildirFactory, IMaildir
-        from zope.sendmail.maildir import Maildir
         verifyObject(IMaildirFactory, Maildir)
 
         # Case 1: normal maildir
@@ -213,7 +214,6 @@ class TestMaildir(unittest.TestCase):
         self.assertRaises(ValueError, Maildir, '/path/to/emptydirectory', True)
 
     def test_iteration(self):
-        from zope.sendmail.maildir import Maildir
         m = Maildir('/path/to/maildir')
         messages = sorted(m)
         self.assertEqual(messages, ['/path/to/maildir/cur/1',
@@ -222,16 +222,24 @@ class TestMaildir(unittest.TestCase):
                                     '/path/to/maildir/new/2'])
 
     def test_newMessage(self):
-        from zope.sendmail.maildir import Maildir
-        from zope.sendmail.interfaces import IMaildirMessageWriter
         m = Maildir('/path/to/maildir')
         fd = m.newMessage()
         verifyObject(IMaildirMessageWriter, fd)
         self.assertTrue(fd._filename.startswith(
             '/path/to/maildir/tmp/1234500002.4242.myhostname.'))
 
+    def test_newMessage_error(self):
+        m = Maildir('/path/to/maildir')
+        def open(*args):
+            raise OSError(errno.EADDRINUSE, "")
+        self.fake_os_module.open = open
+
+        with self.assertRaises(OSError) as exc:
+            m.newMessage()
+
+        self.assertEqual(exc.exception.errno, errno.EADDRINUSE)
+
     def test_newMessage_never_loops(self):
-        from zope.sendmail.maildir import Maildir
         self.fake_os_module._all_files_exist = True
         m = Maildir('/path/to/maildir')
         self.assertRaises(RuntimeError, m.newMessage)
@@ -250,7 +258,7 @@ class TestMaildir(unittest.TestCase):
         self.assertEqual(writer._fd._written, b'fee fie foe foo')
 
         writer.abort()
-        self.assertEqual(writer._fd._closed, True)
+        self.assertTrue(writer._fd._closed)
         self.assertTrue(filename1 in self.fake_os_module._removed_files)
         # Once aborted, abort does nothing
         self.fake_os_module._removed_files = ()
@@ -267,7 +275,7 @@ class TestMaildir(unittest.TestCase):
         fd = FakeFile(filename1, 'w')
         writer = MaildirMessageWriter(fd, filename1, filename2)
         writer.commit()
-        self.assertEqual(writer._fd._closed, True)
+        self.assertTrue(writer._fd._closed)
         self.assertIn((filename1, filename2),
                       self.fake_os_module._renamed_files)
         # Once commited, commit does nothing
@@ -293,6 +301,8 @@ class TestMaildir(unittest.TestCase):
         writer.writelines([u' fo\xe8', u' fo\xf2'])
         self.assertEqual(writer._fd._written,
                          b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+        writer.close()
+        self.assertTrue(writer._fd._closed)
 
 
 def test_suite():
