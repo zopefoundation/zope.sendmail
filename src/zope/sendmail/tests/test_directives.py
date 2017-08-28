@@ -99,7 +99,9 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         with self.assertRaises(ConfigurationError) as exc:
             xmlconfig.string(self.zcml)
 
-        msg = str(exc.exception.args[1])
+        # A ConfigurationExecutionException wraps the ConfigurationError
+        # we're interested in.
+        msg = str(exc.exception.evalue)
         self.assertIn(name, msg)
         self.assertIn('is not defined', msg)
 

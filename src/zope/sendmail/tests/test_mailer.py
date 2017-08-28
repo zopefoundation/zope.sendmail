@@ -57,9 +57,12 @@ class SMTP(object):
     def has_extn(self, ext):
         return True
 
+    ehlo_code = 200
+    ehlo_msg = 'Hello, I am your stupid MTA mock'
+
     def ehlo(self):
         self.does_esmtp = True
-        return (200, 'Hello, I am your stupid MTA mock')
+        return (self.ehlo_code, self.ehlo_msg)
 
     def starttls(self):
         pass
@@ -71,8 +74,8 @@ class SMTPWithNoEHLO(SMTP):
     def helo(self):
         return (200, 'Hello, I am your stupid MTA mock')
 
-    def ehlo(self):
-        return (502, 'I don\'t understand EHLO')
+    ehlo_code = 502
+    ehlo_msg = "I don't understand EHL"
 
 
 class TestSMTPMailer(unittest.TestCase):
@@ -81,6 +84,7 @@ class TestSMTPMailer(unittest.TestCase):
 
     def _makeSMTP(self, h, p):
         self.smtp = self.SMTPClass(h, p)
+        self.smtp_hook(self.smtp)
         return self.smtp
 
 
@@ -92,6 +96,7 @@ class TestSMTPMailer(unittest.TestCase):
             self.mailer = SMTPMailer(u'localhost', port)
 
         self.mailer.smtp = self._makeSMTP
+        self.smtp_hook = lambda smtp: None
 
     def test_interface(self):
         verifyObject(ISMTPMailer, self.mailer)
@@ -166,6 +171,60 @@ class TestSMTPMailer(unittest.TestCase):
         self.assertEqual(self.smtp.msgtext, msgtext)
         self.assertTrue(not self.smtp.quitted)
         self.assertTrue(self.smtp.closed)
+
+
+    def test_vote_bad_connection(self):
+
+        def hook(smtp):
+            smtp.ehlo_code = 100
+            smtp.helo = lambda: (100, "Nope")
+        self.smtp_hook = hook
+
+        with self.assertRaisesRegexp(RuntimeError,
+                                     "Error sending HELO to the SMTP server"):
+            self.mailer.vote(None, None, None)
+
+    def test_abort_no_conn(self):
+        self.assertIsNone(self.mailer.abort())
+
+    def test_abort_fails_call_close(self):
+        class Conn(object):
+            closed = False
+            def quit(self):
+                raise SSLError()
+            def close(self):
+                self.closed = True
+
+        conn = Conn()
+        self.mailer.connection = conn
+        self.mailer.abort()
+
+        self.assertTrue(conn.closed)
+
+    def test_send_no_tls_forced(self):
+        class Conn(object):
+            def has_extn(self, name):
+                assert name == 'starttls'
+                return False
+
+        self.mailer.force_tls = True
+        self.mailer.connection = Conn()
+
+        with self.assertRaisesRegexp(RuntimeError,
+                                     'TLS is not available'):
+            self.mailer.send(None, None, None)
+
+    def test_send_no_esmtp_with_username(self):
+        class Conn(object):
+            does_esmtp = False
+            def has_extn(self, *args):
+                return False
+
+        self.mailer.connection = Conn()
+        self.mailer.username = 'user'
+        with self.assertRaisesRegexp(RuntimeError,
+                                     "Mailhost does not support ESMTP but a username"):
+            self.mailer.send(None, None, None)
 
 
 class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
