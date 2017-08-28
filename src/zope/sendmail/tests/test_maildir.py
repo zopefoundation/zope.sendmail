@@ -14,7 +14,6 @@
 """Unit tests for zope.sendmail.maildir module
 """
 from __future__ import print_function
-from __future__ import print_function
 
 import unittest
 import stat
@@ -45,7 +44,7 @@ class FakeOsPathModule(object):
         self.files = files
         self.dirs = dirs
         mtimes = {}
-        for t,f in enumerate(files):
+        for t, f in enumerate(files):
             mtimes[f] = 9999 - t
         self._mtimes = mtimes
 
@@ -109,9 +108,7 @@ class FakeOsModule(object):
         return False
 
     def stat(self, path):
-        if path in self._stat_mode:
-            return (self._stat_mode[path], 0, 0, 1, 0, 0, 0, 0, 0, 0)
-        raise OSError('%s does not exist' % path)
+        raise NotImplementedError()
 
     def listdir(self, path):
         return self._listdir.get(path, [])
@@ -133,29 +130,20 @@ class FakeOsModule(object):
             and self.access(filename, 0)):
             raise OSError(errno.EEXIST, 'file already exists')
         if not flags & os.O_CREAT and not self.access(filename, 0):
-            raise OSError('file not found')
+            raise OSError('file not found') # pragma: no cover
         fd = max(list(self._descriptors.keys()) + [2]) + 1
         self._descriptors[fd] = filename, flags, mode
         return fd
 
     def fdopen(self, fd, mode='r'):
         try:
-            filename, flags, permissions = self._descriptors[fd]
-        except KeyError:
+            filename, flags, _permissions = self._descriptors[fd]
+        except KeyError: # pragma: no cover
             raise AssertionError('os.fdopen() called with an unknown'
                                  ' file descriptor')
-        if mode == 'r':
-            assert not flags & os.O_WRONLY
-            assert not flags & os.O_RDWR
-        elif mode == 'w':
-            assert flags & os.O_WRONLY
-            assert not flags & os.O_RDWR
-        elif mode == 'r+':
-            assert not flags & os.O_WRONLY
-            assert flags & os.O_RDWR
-        else:
-            raise AssertionError("don't know how to verify if flags match"
-                                 " mode %r" % mode)
+        assert mode == 'w'
+        assert flags & os.O_WRONLY
+        assert not flags & os.O_RDWR
         return FakeFile(filename, mode)
 
 
@@ -193,7 +181,6 @@ class TestMaildir(unittest.TestCase):
         self.maildir_module.os = self.old_os_module
         self.maildir_module.time = self.old_time_module
         self.maildir_module.socket = self.old_socket_module
-        self.fake_os_module._stat_never_fails = False
         self.fake_os_module._all_files_exist = False
 
     def test_factory(self):
@@ -213,9 +200,9 @@ class TestMaildir(unittest.TestCase):
         verifyObject(IMaildir, m)
         dirs = sorted(self.fake_os_module._made_directories)
         self.assertEqual(dirs, ['/path/to/nosuchfolder',
-                                 '/path/to/nosuchfolder/cur',
-                                 '/path/to/nosuchfolder/new',
-                                 '/path/to/nosuchfolder/tmp'])
+                                '/path/to/nosuchfolder/cur',
+                                '/path/to/nosuchfolder/new',
+                                '/path/to/nosuchfolder/tmp'])
 
         # Case 3: it is a file, not a directory
         self.assertRaises(ValueError, Maildir, '/path/to/regularfile', False)
@@ -230,9 +217,9 @@ class TestMaildir(unittest.TestCase):
         m = Maildir('/path/to/maildir')
         messages = sorted(m)
         self.assertEqual(messages, ['/path/to/maildir/cur/1',
-                                     '/path/to/maildir/cur/2',
-                                     '/path/to/maildir/new/1',
-                                     '/path/to/maildir/new/2'])
+                                    '/path/to/maildir/cur/2',
+                                    '/path/to/maildir/new/1',
+                                    '/path/to/maildir/new/2'])
 
     def test_newMessage(self):
         from zope.sendmail.maildir import Maildir
@@ -241,11 +228,10 @@ class TestMaildir(unittest.TestCase):
         fd = m.newMessage()
         verifyObject(IMaildirMessageWriter, fd)
         self.assertTrue(fd._filename.startswith(
-                     '/path/to/maildir/tmp/1234500002.4242.myhostname.'))
+            '/path/to/maildir/tmp/1234500002.4242.myhostname.'))
 
     def test_newMessage_never_loops(self):
         from zope.sendmail.maildir import Maildir
-        from zope.sendmail.interfaces import IMaildirMessageWriter
         self.fake_os_module._all_files_exist = True
         m = Maildir('/path/to/maildir')
         self.assertRaises(RuntimeError, m.newMessage)
@@ -282,8 +268,8 @@ class TestMaildir(unittest.TestCase):
         writer = MaildirMessageWriter(fd, filename1, filename2)
         writer.commit()
         self.assertEqual(writer._fd._closed, True)
-        self.assertTrue((filename1, filename2)
-                       in self.fake_os_module._renamed_files)
+        self.assertIn((filename1, filename2),
+                      self.fake_os_module._renamed_files)
         # Once commited, commit does nothing
         self.fake_os_module._renamed_files = ()
         writer.commit()
@@ -306,14 +292,11 @@ class TestMaildir(unittest.TestCase):
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
         self.assertEqual(writer._fd._written,
-                          b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+                         b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
 
 
 def test_suite():
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMaildir))
-    return suite
-
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
 
 if __name__ == '__main__':
     unittest.main()
