@@ -14,24 +14,17 @@
 """Classes which abstract different channels a message could be sent to.
 """
 __docformat__ = 'restructuredtext'
-import socket
+
+from ssl import SSLError
 from smtplib import SMTP
 
 from zope.interface import implementer
 from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail._compat import text_type
 
-try:
-    from socket import sslerror as SSLError
-except ImportError:
-    # Py3: The error location changed.
-    from ssl import SSLError
-
-have_ssl = hasattr(socket, 'ssl')
 
 @implementer(ISMTPMailer)
 class SMTPMailer(object):
-
 
     smtp = SMTP
 
@@ -44,6 +37,8 @@ class SMTPMailer(object):
         self.force_tls = force_tls
         self.no_tls = no_tls
         self.connection = None
+        self.code = None
+        self.response = None
 
     def vote(self, fromaddr, toaddrs, message):
         self.connection = self.smtp(self.hostname, str(self.port))
@@ -73,15 +68,14 @@ class SMTPMailer(object):
         if connection is None:
             self.vote(fromaddr, toaddrs, message)
 
-        connection, code, response = self.connection, self.code, self.response
-
+        connection = self.connection
 
         # encryption support
-        have_tls =  connection.has_extn('starttls')
+        have_tls = connection.has_extn('starttls')
         if not have_tls and self.force_tls:
             raise RuntimeError('TLS is not available but TLS is required')
 
-        if have_tls and have_ssl and not self.no_tls:
+        if have_tls and not self.no_tls:
             connection.starttls()
             connection.ehlo()
 
@@ -95,7 +89,7 @@ class SMTPMailer(object):
                 connection.login(username, password)
         elif self.username:
             raise RuntimeError('Mailhost does not support ESMTP but a username '
-                                'is configured')
+                               'is configured')
 
         connection.sendmail(fromaddr, toaddrs, message)
         try:

@@ -15,6 +15,8 @@
 
 - Declare explicit dependency on ``pywin32`` on Windows.
 
+- Fix SSL support on Python 3. See `issue 9
+  <https://github.com/zopefoundation/zope.sendmail/issues/9>`_.
 
 4.0.1 (2014-12-29)
 ==================

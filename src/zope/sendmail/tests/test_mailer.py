@@ -14,11 +14,7 @@
 """Tests for mailers.
 """
 
-try:
-    from socket import sslerror as SSLError
-except ImportError:
-    # Py3: The error location changed.
-    from ssl import SSLError
+from ssl import SSLError
 
 import unittest
 from zope.interface.verify import verifyObject
@@ -64,6 +60,9 @@ class SMTP(object):
     def ehlo(self):
         self.does_esmtp = True
         return (200, 'Hello, I am your stupid MTA mock')
+
+    def starttls(self):
+        pass
 
 
 class SMTPWithNoEHLO(SMTP):
