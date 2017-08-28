@@ -43,22 +43,23 @@ class Mailer(object):
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def setUp(self):
-        self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
-
         super(DirectivesTest, self).setUp()
-        self.testMailer = Mailer()
 
+        self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
+        self.addCleanup(shutil.rmtree, self.mailbox, True)
+        self.testMailer = Mailer()
+        self.smtpmailer = Mailer()
         gsm = zope.component.getGlobalSiteManager()
-        gsm.registerUtility(Mailer(), IMailer, "test.smtp")
+
+        gsm.registerUtility(self.smtpmailer, IMailer, "test.smtp")
         gsm.registerUtility(self.testMailer, IMailer, "test.mailer")
 
         here = os.path.dirname(__file__)
-        zcmlfile = open(os.path.join(here, "mail.zcml"), 'r')
-        zcml = zcmlfile.read()
-        zcmlfile.close()
+        with open(os.path.join(here, "mail.zcml"), 'r') as f:
+            self.zcml = f.read()
+        self.zcml = self.zcml.replace('path/to/tmp/mailbox', self.mailbox)
 
-        self.context = xmlconfig.string(
-            zcml.replace('path/to/tmp/mailbox', self.mailbox))
+        self.context = xmlconfig.string(self.zcml)
         self.orig_maildir = delivery.Maildir
         delivery.Maildir = MaildirStub
 
@@ -74,7 +75,6 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
                 thread.stop()
                 thread.join()
 
-        shutil.rmtree(self.mailbox, True)
         super(DirectivesTest, self).tearDown()
 
     def testQueuedDelivery(self):
@@ -91,6 +91,23 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         mailer = zope.component.getUtility(IMailer, "smtp")
         self.assertTrue(ISMTPMailer.providedBy(mailer))
 
+
+    def _check_zcml_without_registration(self, utility, name):
+        gsm = zope.component.getGlobalSiteManager()
+        gsm.unregisterUtility(utility, IMailer, name)
+        from zope.configuration.exceptions import ConfigurationError
+        with self.assertRaises(ConfigurationError) as exc:
+            xmlconfig.string(self.zcml)
+
+        msg = str(exc.exception.args[1])
+        self.assertIn(name, msg)
+        self.assertIn('is not defined', msg)
+
+    def test_zcml_without_registered_smtp_mailer(self):
+        self._check_zcml_without_registration(self.smtpmailer, 'test.smtp')
+
+    def test_zcml_without_registered_mailer(self):
+        self._check_zcml_without_registration(self.testMailer, 'test.mailer')
 
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)
