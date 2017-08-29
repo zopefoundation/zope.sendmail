@@ -15,8 +15,12 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
+import sys
 import smtplib
 import unittest
+import os.path
+import tempfile
+import shutil
 
 import transaction
 from zope.interface import implementer
@@ -274,6 +278,64 @@ class MaildirStub(object):
         self.msgs.append(m)
         return m
 
+class WritableMaildirStub(MaildirStub):
+
+    STUB_DEFAULT_MESSAGE_LINES = (
+        b'X-Zope-From: foo@example.com\n',
+        b'X-Zope-To: bar@example.com, baz@example.com\n',
+        b'Header: value\n\nBody\n')
+
+    # The result of sending a message written with the default lines
+    # through the stub mailer
+    STUB_DEFAULT_MESSAGE_SENT = (
+        'foo@example.com',
+        ('bar@example.com', 'baz@example.com'),
+        'Header: value\n\nBody\n')
+
+    STUB_DEFAULT_MESSAGE_RECPT = ('bar@example.com', 'baz@example.com')
+
+    def __init__(self, test, *args, **kwargs):
+        super(WritableMaildirStub, self).__init__(*args, **kwargs)
+        self.stub_directory = tempfile.mkdtemp(suffix=".test_maildir")
+        test.addCleanup(shutil.rmtree, self.stub_directory)
+
+    def stub_createFile(self, filename="message", lines=STUB_DEFAULT_MESSAGE_LINES):
+        """
+        Create a new file in the temporary directory.
+
+        The filename is just the base portion.
+        """
+        filename = os.path.join(self.stub_directory, filename)
+        with open(filename, 'wb') as f:
+            for line in lines:
+                f.write(line)
+        self.files.append(filename)
+        return filename
+
+    def stub_getTmpFilename(self, filename="message"):
+        filename = os.path.join(self.stub_directory, filename)
+        head, tail = os.path.split(filename)
+        tmp_filename = os.path.join(head, '.sending-' + tail)
+        return tmp_filename
+
+    def stub_getFailedFilename(self, filename="message"):
+        filename = os.path.join(self.stub_directory, filename)
+        head, tail = os.path.split(filename)
+        fail_filename = os.path.join(head, '.rejected-' + tail)
+        return fail_filename
+
+    def stub_createTmpFile(self, filename="message"):
+        """
+        Create a temporary version of a file that already exists by
+        copying its data to a properly named file.
+
+        Returns the complete path.
+        """
+        tmp_filename = self.stub_getTmpFilename(filename)
+        filename = os.path.join(self.stub_directory, filename)
+        shutil.copyfile(filename, tmp_filename)
+        return tmp_filename
+
 
 class LoggerStub(object):
 
@@ -285,7 +347,10 @@ class LoggerStub(object):
         raise NotImplementedError()
 
     def error(self, msg, *args, **kwargs):
-        self.errors.append((msg, args, kwargs))
+        error = (msg, args, kwargs)
+        if kwargs.get("exc_info"):
+            error += sys.exc_info()[:2]
+        self.errors.append(error)
 
     def info(self, msg, *args, **kwargs):
         self.infos.append((msg, args, kwargs))

@@ -19,36 +19,120 @@ import os.path
 import shutil
 import sys
 from tempfile import mkdtemp
-from unittest import TestCase, TestSuite, makeSuite, main
+import unittest
+import io
+from contextlib import contextmanager
 
 from zope.sendmail.queue import ConsoleApp
-from zope.sendmail.tests.test_delivery import MaildirStub, LoggerStub, \
-    BrokenMailerStub, SMTPResponseExceptionMailerStub, MailerStub
+from zope.sendmail.tests.test_delivery import WritableMaildirStub
+from zope.sendmail.tests.test_delivery import LoggerStub
+from zope.sendmail.tests.test_delivery import BrokenMailerStub
+from zope.sendmail.tests.test_delivery import SMTPResponseExceptionMailerStub
+from zope.sendmail.tests.test_delivery import MailerStub
+from zope.sendmail.tests.test_delivery import BizzarreMailError
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
+from zope.sendmail import queue
 
 
-class TestQueueProcessorThread(TestCase):
+class QPTesting(queue.QueueProcessorThread):
+
+    test = None
+
+    def _makeMaildir(self, path):
+        return WritableMaildirStub(self.test, path)
+
+class SMTPRecipientsRefusedMailerStub(object):
+
+    def __init__(self, recipients):
+        self.recipients = recipients
+
+    def send(self, fromaddr, toaddrs, message):
+        import smtplib
+        raise smtplib.SMTPRecipientsRefused(self.recipients)
+
+@contextmanager
+def patched(module, attr, func):
+    orig = getattr(module, attr)
+    setattr(module, attr, func)
+    try:
+        yield
+    finally:
+        setattr(module, attr, orig)
+
+class TestQueueProcessorThread(unittest.TestCase):
 
     def setUp(self):
-        from zope.sendmail.queue import QueueProcessorThread
-        self.md = MaildirStub('/foo/bar/baz')
-        self.thread = QueueProcessorThread()
-        self.thread.setMaildir(self.md)
+        self.thread = QPTesting()
+        self.thread.test = self
+        self.thread.setQueuePath('/foo/bar/baz')
+        self.md = self.thread.maildir
+        self.dir = self.md.stub_directory
         self.mailer = MailerStub()
         self.thread.setMailer(self.mailer)
         self.thread.log = LoggerStub()
-        self.dir = mkdtemp()
+        self.filename = None
 
-    def tearDown(self):
-        shutil.rmtree(self.dir)
+    def _assertEmptyErrorLog(self):
+        self.assertEqual(self.thread.log.errors, [])
+
+    def _assertErrorLog(self,
+                        From=WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[0],
+                        to=", ".join(WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[1]),
+                        exception_kind=None):
+        expected = ('Error while sending mail from %s to %s.',
+                    (From, to,),
+                    {'exc_info': True},)
+        error = self.thread.log.errors[0]
+        if exception_kind:
+            error = error[:4]
+            expected += (exception_kind,)
+        else:
+            error = error[:3]
+        self.assertEqual(error, expected)
+
+    def _assertGenericErrorLog(self, filename="message",
+                               exception=None):
+        full_path = os.path.join(self.dir, filename)
+        expected = ('Error while sending mail : %s ',
+                    (full_path,),
+                    {'exc_info': True})
+        error = self.thread.log.errors[0]
+        error = error[:5]
+        expected += (type(exception), exception,)
+        self.assertEqual(error, expected)
+
+    def _assertTmpMessagePathDoesNotExist(self, filename="message"):
+        full_path = self.md.stub_getTmpFilename(filename)
+        self.assertFalse(os.path.exists(full_path),
+                         "The temporary path '%s' should not exist" % full_path)
+
+    def _assertTmpMessagePathExists(self, filename="message"):
+        full_path = self.md.stub_getTmpFilename(filename)
+        self.assertTrue(os.path.exists(full_path),
+                        "The temporary path '%s' should exist" % full_path)
+
+    def _assertRejectedMessagePathExists(self, filename="message"):
+        full_path = self.md.stub_getFailedFilename(filename)
+        self.assertTrue(os.path.exists(full_path),
+                        "The rejected path '%s' should exist" % full_path)
+
+    def _assertMessagePathExists(self, filename="message"):
+        full_path = os.path.join(self.dir, filename)
+        self.assertTrue(os.path.exists(full_path),
+                        "The path '%s' should exist" % full_path)
+
+    def _assertMessagePathDoesNotExist(self, filename="message"):
+        full_path = os.path.join(self.dir, filename)
+        self.assertFalse(os.path.exists(full_path),
+                         "The path '%s' should not exist" % full_path)
+
+    def test_makeMaildir_creates(self):
+        md = queue.QueueProcessorThread()._makeMaildir(os.path.join(self.dir, 'testing'))
+        self.assertTrue(os.path.exists(md.path))
 
     def test_threadName(self):
         self.assertEqual(self.thread.getName(),
-                          "zope.sendmail.queue.QueueProcessorThread")
+                         "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
         hdr = ('X-Zope-From: foo@example.com\n'
@@ -61,100 +145,215 @@ class TestQueueProcessorThread(TestCase):
         self.assertEqual(t, ('bar@example.com', 'baz@example.com'))
         self.assertEqual(m, msg)
 
+    def test_parseMessage_error(self):
+        msg = "bad message"
+        f, t, m = self.thread._parseMessage(msg)
+        self.assertEqual(f, "")
+        self.assertEqual(t, ())
+        self.assertEqual(m, msg)
+
     def test_deliveration(self):
-        self.filename = os.path.join(self.dir, 'message')
-        with open(self.filename, "w+b") as temp:
-            temp.write(b'X-Zope-From: foo@example.com\n'
-                       b'X-Zope-To: bar@example.com, baz@example.com\n'
-                       b'Header: value\n\nBody\n')
-        self.md.files.append(self.filename)
+        self.filename = self.md.stub_createFile('message')
+        self._assertMessagePathExists("message")
         self.thread.run(forever=False)
         self.assertEqual(self.mailer.sent_messages,
-                          [('foo@example.com',
-                            ('bar@example.com', 'baz@example.com'),
-                            'Header: value\n\nBody\n')])
-        self.assertFalse(os.path.exists(self.filename), 'File exists')
+                         [self.md.STUB_DEFAULT_MESSAGE_SENT])
+        self._assertMessagePathDoesNotExist('message')
         self.assertEqual(self.thread.log.infos,
-                          [('Mail from %s to %s sent.',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com'),
-                            {})])
+                         [('Mail from %s to %s sent.',
+                           ('foo@example.com',
+                            'bar@example.com, baz@example.com'),
+                           {})])
 
     def test_error_logging(self):
         self.thread.setMailer(BrokenMailerStub())
-        self.filename = os.path.join(self.dir, 'message')
-        with open(self.filename, "w+b") as temp:
-            temp.write(b'X-Zope-From: foo@example.com\n'
-                       b'X-Zope-To: bar@example.com, baz@example.com\n'
-                       b'Header: value\n\nBody\n')
-        self.md.files.append(self.filename)
+        self.filename = self.md.stub_createFile('message')
+        self._assertMessagePathExists("message")
         self.thread.run(forever=False)
-        self.assertEqual(self.thread.log.errors,
-                          [('Error while sending mail from %s to %s.',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com'),
-                            {'exc_info': 1})])
+        self._assertErrorLog(exception_kind=BizzarreMailError)
 
     def test_smtp_response_error_transient(self):
         # Test a transient error
         self.thread.setMailer(SMTPResponseExceptionMailerStub(451))
-        self.filename = os.path.join(self.dir, 'message')
-        with open(self.filename, "w+b") as temp:
-            temp.write(b'X-Zope-From: foo@example.com\n'
-                       b'X-Zope-To: bar@example.com, baz@example.com\n'
-                       b'Header: value\n\nBody\n')
-        self.md.files.append(self.filename)
+        self.filename = self.md.stub_createFile('message')
+
         self.thread.run(forever=False)
 
-        # File must remail were it was, so it will be retried
-        self.assertTrue(os.path.exists(self.filename))
-        self.assertEqual(self.thread.log.errors,
-                          [('Error while sending mail from %s to %s.',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com'),
-                            {'exc_info': 1})])
+        # File must remain were it was, so it will be retried
+        self._assertMessagePathExists("message")
+        self._assertErrorLog()
 
     def test_smtp_response_error_permanent(self):
         # Test a permanent error
         self.thread.setMailer(SMTPResponseExceptionMailerStub(550))
-        self.filename = os.path.join(self.dir, 'message')
-        with open(self.filename, "w+b") as temp:
-            temp.write(b'X-Zope-From: foo@example.com\n'
-                       b'X-Zope-To: bar@example.com, baz@example.com\n'
-                       b'Header: value\n\nBody\n')
-        self.md.files.append(self.filename)
+        self.filename = self.md.stub_createFile('message')
+        self._assertMessagePathExists("message")
+
         self.thread.run(forever=False)
 
         # File must be moved aside
-        self.assertFalse(os.path.exists(self.filename))
-        self.assertTrue(os.path.exists(os.path.join(self.dir,
-                                                    '.rejected-message')))
+        self._assertMessagePathDoesNotExist("message")
+        self._assertRejectedMessagePathExists('message')
+
         self.assertEqual(self.thread.log.errors,
-                          [('Discarding email from %s to %s due to a '
-                            'permanent error: %s',
-                            ('foo@example.com',
-                             'bar@example.com, baz@example.com',
-                             "(550, 'Serious Error')"), {})])
+                         [('Discarding email from %s to %s due to a '
+                           'permanent error: %s',
+                           ('foo@example.com',
+                            'bar@example.com, baz@example.com',
+                            "(550, 'Serious Error')"), {})])
 
     def test_smtp_recipients_refused(self):
         # Test a permanent error
         self.thread.setMailer(SMTPRecipientsRefusedMailerStub(
-                               ['bar@example.com']))
-        self.filename = os.path.join(self.dir, 'message')
-        with open(self.filename, "w+b") as temp:
-            temp.write(b'X-Zope-From: foo@example.com\n'
-                       b'X-Zope-To: bar@example.com, baz@example.com\n'
-                       b'Header: value\n\nBody\n')
-        self.md.files.append(self.filename)
+            [self.md.STUB_DEFAULT_MESSAGE_RECPT[0]]))
+        self.md.stub_createFile()
         self.thread.run(forever=False)
 
         # File must be moved aside
-        self.assertFalse(os.path.exists(self.filename))
-        self.assertTrue(os.path.exists(os.path.join(self.dir,
-                                                    '.rejected-message')))
+        self._assertMessagePathDoesNotExist()
+        self._assertRejectedMessagePathExists()
+
         self.assertEqual(self.thread.log.errors,
-                          [('Email recipients refused: %s',
-                           ('bar@example.com',), {})])
+                         [('Email recipients refused: %s',
+                           (self.md.STUB_DEFAULT_MESSAGE_RECPT[0],), {})])
+
+    def test_stop_while_running(self):
+        test = self
+        class Maildir(object):
+            count = 0
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                self.count += 1
+                if self.count == 1:
+                    test.thread.stop()
+                    return
+                raise AssertionError("Should have stopped")
+
+            next = __next__ # Python 2
+
+        self.thread.setMaildir(Maildir())
+        self.thread.run()
+        self.assertEqual(1, self.thread.maildir.count)
+
+    def test_tmpfile_exists(self):
+        self.md.stub_createFile()
+        self.md.stub_createTmpFile()
+
+        self.thread.run(forever=False)
+
+        # Both of them are still there because this was a brand new
+        # file
+        self._assertMessagePathExists()
+        self._assertTmpMessagePathExists()
+
+    def test_tmpfile_cannot_stat(self):
+        self.md.stub_createFile()
+        tmp_file = self.md.stub_createTmpFile()
+
+        err = OSError(tmp_file)
+        def stat(fname):
+            # Note that this interferes with debuggers
+            self.assertEqual(fname, tmp_file)
+            raise err
+
+        with patched(os, 'stat', stat):
+            self.thread.run(forever=False)
+
+        # Both of them are still there because of the exception
+        self._assertMessagePathExists()
+        self._assertTmpMessagePathExists()
+
+        # And we logged the random error
+        self._assertGenericErrorLog(exception=err)
+
+
+    def test_tmpfile_too_old(self):
+        self.md.stub_createFile()
+        self.md.stub_createTmpFile()
+
+        with patched(queue, 'MAX_SEND_TIME', -1):
+            self.thread.run(forever=False)
+
+        # Neither of them are there any more
+        # file
+        self._assertMessagePathDoesNotExist()
+        self._assertTmpMessagePathDoesNotExist()
+
+    def test_tmpfile_too_old_unlink_fails_generic(self):
+        # generic unlink exceptions are ignored and processing just continues.
+        # Later we fail to link the message file to the tempfile and catch that
+        # and bail.
+        self.md.stub_createFile()
+        tmp_file = self.md.stub_createTmpFile()
+
+        def unlink(fname):
+            self.assertEqual(fname, tmp_file)
+            raise OSError(fname)
+
+        with patched(queue, 'MAX_SEND_TIME', -1):
+            with patched(os, 'unlink', unlink):
+                self.thread.run(forever=False)
+
+        # The message was not processed
+        self._assertMessagePathExists()
+        # And our patch kept the tmpfile in place
+        self._assertTmpMessagePathExists()
+        self._assertEmptyErrorLog()
+
+    def test_tmpfile_too_old_unlink_fails_dne(self):
+        # If we try to remove a tempfile and its already gone,
+        # skip it
+        self.md.stub_createFile()
+        tmp_file = self.md.stub_createTmpFile()
+
+        def unlink(fname):
+            self.assertEqual(fname, tmp_file)
+            raise OSError(2, fname)
+
+        with patched(queue, 'MAX_SEND_TIME', -1):
+            with patched(os, 'unlink', unlink):
+                self.thread.run(forever=False)
+
+        # The message was not processed
+        self._assertMessagePathExists()
+        # But our patch kept the tmpfile in place
+        self._assertTmpMessagePathExists()
+        self._assertEmptyErrorLog()
+
+    def test_utime_fails_dne(self):
+        # A DNE error from utime causes the process to continue
+        filename = self.md.stub_createFile()
+
+        def utime(fname, atm):
+            self.assertEqual(fname, filename)
+            self.assertIsNone(atm)
+            raise OSError(2, fname)
+
+        with patched(os, 'utime', utime):
+            self.thread.run(forever=False)
+
+        # The message was not processed
+        self._assertMessagePathExists()
+        self._assertEmptyErrorLog()
+
+
+    def test_run_forever(self):
+        import time
+        class DoneSleeping(Exception):
+            pass
+
+        def sleep(i):
+            self.assertEqual(i, self.thread.interval)
+            raise DoneSleeping()
+
+        with patched(time, 'sleep', sleep):
+            with self.assertRaises(DoneSleeping):
+                self.thread.run()
+
+
+
 
 test_ini = """[app:zope-sendmail]
 interval = 33
@@ -167,7 +366,7 @@ no_tls = True
 queue_path = hammer/dont/hurt/em
 """
 
-class TestConsoleApp(TestCase):
+class TestConsoleApp(unittest.TestCase):
     def setUp(self):
         from zope.sendmail.delivery import QueuedMailDelivery
         from zope.sendmail.maildir import Maildir
@@ -177,7 +376,7 @@ class TestConsoleApp(TestCase):
         self.maildir = Maildir(self.queue_dir, True)
         self.mailer = MailerStub()
         self.real_stderr = sys.stderr
-        self.stderr = StringIO()
+        self.stderr = io.StringIO() if bytes is not str else io.BytesIO()
 
     def tearDown(self):
         sys.stderr = self.real_stderr
@@ -220,6 +419,13 @@ class TestConsoleApp(TestCase):
         self.assertEqual("rossi", app.password)
         self.assertTrue(app.force_tls)
         self.assertFalse(app.no_tls)
+
+        # Add an extra argument
+        cmdline += ' another-one'
+        with self.assertRaises(SystemExit):
+            ConsoleApp(cmdline.split(), verbose=False)
+
+        # self.assertIn('too many arguments', self.stderr.getvalue())
 
     def test_args_processing_username_without_password(self):
         # test username without password
@@ -266,22 +472,13 @@ class TestConsoleApp(TestCase):
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
 
+    def test_run(self):
+        cmdline = ['sendmail', self.dir]
 
-class SMTPRecipientsRefusedMailerStub(object):
-
-    def __init__(self, recipients):
-        self.recipients = recipients
-
-    def send(self, fromaddr, toaddrs, message):
-        import smtplib
-        raise smtplib.SMTPRecipientsRefused(self.recipients)
-
+        with patched(QPTesting, 'test', self), \
+             patched(ConsoleApp, 'QueueProcessorKind', QPTesting), \
+             patched(ConsoleApp, 'MailerKind', MailerStub):
+            queue.run(cmdline)
 
 def test_suite():
-    return TestSuite((
-        makeSuite(TestQueueProcessorThread),
-        makeSuite(TestConsoleApp),
-        ))
-
-if __name__ == '__main__':
-    main()
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)

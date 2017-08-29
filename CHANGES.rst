@@ -18,6 +18,8 @@
 - Fix SSL support on Python 3. See `issue 9
   <https://github.com/zopefoundation/zope.sendmail/issues/9>`_.
 
+- Reach 100% test coverage and maintain it via tox.ini and Travis CI.
+
 4.0.1 (2014-12-29)
 ==================
 
