@@ -19,7 +19,7 @@ __docformat__ = 'restructuredtext'
 
 import atexit
 import logging
-import optparse
+import argparse
 import os
 import smtplib
 import stat
@@ -363,39 +363,56 @@ class ConsoleApp(object):
         "queue_path",
     ]
 
-    parser = optparse.OptionParser(usage='%prog [OPTIONS] path/to/maildir')
-    parser.add_option('--daemon', action='store_true',
-                      help="Run in daemon mode, periodically checking queue "
-                           "and sending messages.  Default is to send all "
-                           "messages in queue once and exit.")
-    parser.add_option('--interval', metavar='<#secs>', type='float', default=3,
-                      help="How often to check queue when in daemon mode. "
-                           "Default is %default seconds.")
-    parser.add_option('--hostname', default='localhost',
-                      help="Name of smtp host to use for delivery.  Default is "
-                           "%default.")
-    parser.add_option('--port', type='int', default=25,
-                      help="Which port on smtp server to deliver mail to. "
-                           "Default is %default.")
-    parser.add_option('--username',
-                      help="Username to use to log in to smtp server.  Default "
-                           "is none.")
-    parser.add_option('--password',
-                      help="Password to use to log in to smtp server.  Must be "
-                           "specified if username is specified.")
-    parser.add_option('--force-tls', action='store_true',
-                      help="Do not connect if TLS is not available.  Not "
-                           "enabled by default.")
-    parser.add_option('--no-tls', action='store_true',
-                      help="Do not use TLS even if is available.  Not enabled "
-                           "by default.")
-    parser.add_option('--config', metavar='<inifile>',
-                      help="Get configuration from specified ini file; it must "
-                           "contain a section [%s] that can contain the "
-                           "following keys: %s. If you specify the queue path "
-                           "in the ini file, you don't need to specify it on "
-                           "the command line." % (INI_SECTION,
-                                                  ', '.join(INI_NAMES)))
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--daemon', action='store_true',
+                        help=("Run in daemon mode, periodically checking queue "
+                              "and sending messages.  Default is to send all "
+                              "messages in queue once and exit."))
+    parser.add_argument('--interval', metavar='<#secs>', type=float, default=3,
+                        help=("How often to check queue when in daemon mode. "
+                              "Default is %(default)s seconds."))
+    smtp_group = parser.add_argument_group("SMTP Server",
+                                           "Connection information for the SMTP server")
+    smtp_group.add_argument('--hostname', default='localhost',
+                            help=("Name of smtp host to use for delivery.  Default is "
+                                  "%(default)s."))
+    smtp_group.add_argument('--port', type=int, default=25,
+                            help=("Which port on smtp server to deliver mail to. "
+                                  "Default is %(default)s."))
+
+    auth_group = parser.add_argument_group("Authentication",
+                                           ("Authentication information for the SMTP server. "
+                                            "If one is provided, they must both be. One or both "
+                                            "can be provided in the --config file."))
+    auth_group.add_argument('--username',
+                            help=("Username to use to log in to smtp server.  Default "
+                                  "is none."))
+    auth_group.add_argument('--password',
+                            help=("Password to use to log in to smtp server.  Must be "
+                                  "specified if username is specified."))
+    del auth_group
+    tls_group = smtp_group.add_mutually_exclusive_group()
+    tls_group.add_argument('--force-tls', action='store_true',
+                           help=("Do not connect if TLS is not available.  Not "
+                                 "enabled by default."))
+    tls_group.add_argument('--no-tls', action='store_true',
+                           help=("Do not use TLS even if is available.  Not enabled "
+                                 "by default."))
+    del tls_group
+    del smtp_group
+    parser.add_argument('--config', metavar='<inifile>',
+                        type=argparse.FileType(),
+                        help=("Get configuration from specified ini file; it must "
+                              "contain a section [%s] that can contain the "
+                              "following keys: %s. If you specify the queue path "
+                              "in the ini file, you don't need to specify it on "
+                              "the command line. With the exception of the queue path, "
+                              "options specified in the ini file override options on the "
+                              "command line." % (INI_SECTION, ', '.join(INI_NAMES))))
+    parser.add_argument("maildir", default=None, nargs="?",
+                        help=("The path to the mail queue directory."
+                              "If not given, it must be found in the --config file."
+                              "If given, this overrides a value in the --config file"))
 
     daemon = False
     interval = 3
@@ -425,7 +442,7 @@ class ConsoleApp(object):
         queue.run(forever=self.daemon)
 
     def _process_args(self, args):
-        opts, args = self.parser.parse_args(args)
+        opts = self.parser.parse_args(args)
         self.daemon = opts.daemon
         self.interval = opts.interval
         self.hostname = opts.hostname
@@ -434,19 +451,18 @@ class ConsoleApp(object):
         self.password = opts.password
         self.force_tls = opts.force_tls
         self.no_tls = opts.no_tls
+
         if opts.config:
-            self._load_config(opts.config)
-        if len(args) > 1:
-            self.parser.error('too many arguments')
-        elif args:
-            self.queue_path = args[0]
+            fname = opts.config.name
+            opts.config.close()
+            self._load_config(fname)
+        self.queue_path = opts.maildir or self.queue_path
+
         if not self.queue_path:
             self.parser.error('please specify the queue path')
         if (self.username or self.password) and \
            not (self.username and self.password):
             self.parser.error('Must use username and password together.')
-        if self.force_tls and self.no_tls:
-            self.parser.error('--force-tls and --no-tls are mutually exclusive.')
 
     def _load_config(self, path):
         section = self.INI_SECTION
