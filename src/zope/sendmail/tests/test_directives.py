@@ -16,9 +16,8 @@
 import os
 import shutil
 import unittest
-import threading
 import tempfile
-import time
+
 
 import zope.component
 from zope.component.testing import PlacelessSetup
@@ -28,7 +27,7 @@ from zope.interface import implementer
 from zope.sendmail.interfaces import \
      IMailDelivery, IMailer, ISMTPMailer
 from zope.sendmail import delivery
-from zope.sendmail.queue import QueueProcessorThread
+from zope.sendmail import zcml
 import zope.sendmail.tests
 
 
@@ -38,6 +37,16 @@ class MaildirStub(object):
 @implementer(IMailer)
 class Mailer(object):
     pass
+
+class MockQueueProcessorThread(object):
+
+    def setMailer(self, mailer):
+        pass
+
+    setQueuePath = setMailer
+
+    def start(self):
+        pass
 
 
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
@@ -59,21 +68,16 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
             self.zcml = f.read()
         self.zcml = self.zcml.replace('path/to/tmp/mailbox', self.mailbox)
 
-        self.context = xmlconfig.string(self.zcml)
+        self.orig_quethread = zcml.QueueProcessorThread
         self.orig_maildir = delivery.Maildir
         delivery.Maildir = MaildirStub
+        zcml.QueueProcessorThread = MockQueueProcessorThread
+
+        self.context = xmlconfig.string(self.zcml)
 
     def tearDown(self):
         delivery.Maildir = self.orig_maildir
-
-        # Tear down the mail queue processor thread.
-        # Give the other thread a chance to start:
-        time.sleep(0.001)
-        threads = list(threading.enumerate())
-        for thread in threads:
-            if isinstance(thread, QueueProcessorThread):
-                thread.stop()
-                thread.join()
+        zcml.QueueProcessorThread = self.orig_quethread
 
         super(DirectivesTest, self).tearDown()
 
