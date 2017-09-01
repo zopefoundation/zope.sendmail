@@ -25,6 +25,7 @@ import smtplib
 import stat
 import threading
 import time
+import errno
 
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.mailer import SMTPMailer
@@ -167,7 +168,7 @@ class QueueProcessorThread(threading.Thread):
         try:
             return func(fname)
         except OSError as e:
-            if e.errno != 2: # 2 means file does not exist
+            if e.errno != errno.ENOENT:
                 # The file existed, but something unexpected
                 # happened. Report it
                 raise
@@ -221,7 +222,7 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         os.unlink(tmp_filename)
                     except OSError as e:
-                        if e.errno == 2: # file does not exist
+                        if e.errno == errno.ENOENT: # file does not exist
                             # it looks like someone else removed the tmp
                             # file, that's fine, we'll try to deliver the
                             # message again later
@@ -246,7 +247,7 @@ class QueueProcessorThread(threading.Thread):
             try:
                 os.utime(filename, None)
             except OSError as e:
-                if e.errno == 2: # file does not exist
+                if e.errno == errno.ENOENT: # file does not exist
                     # someone removed the message before we could
                     # touch it, no need to complain, we'll just keep
                     # going
@@ -259,7 +260,7 @@ class QueueProcessorThread(threading.Thread):
                 #os.link(filename, tmp_filename)
                 _os_link(filename, tmp_filename)
             except OSError as e:
-                if e.errno == 17: # file exists, *nix
+                if e.errno == errno.EEXIST: # file exists, *nix
                     # it looks like someone else is sending this
                     # message too; we'll try again later
                     return

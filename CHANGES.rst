@@ -15,6 +15,9 @@
 
 - Declare explicit dependency on ``pywin32`` on Windows.
 
+- Replace hard-coded constants with equivalents from the standard
+  ``errno`` module.
+
 - Fix SSL support on Python 3. See `issue 9
   <https://github.com/zopefoundation/zope.sendmail/issues/9>`_.
 

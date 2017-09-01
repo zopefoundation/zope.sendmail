@@ -15,6 +15,7 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
+import errno
 import os.path
 import shutil
 import sys
@@ -310,7 +311,7 @@ class TestQueueProcessorThread(unittest.TestCase):
 
         def unlink(fname):
             self.assertEqual(fname, tmp_file)
-            raise OSError(2, fname)
+            raise OSError(errno.ENOENT, fname)
 
         with patched(queue, 'MAX_SEND_TIME', -1):
             with patched(os, 'unlink', unlink):
@@ -329,7 +330,7 @@ class TestQueueProcessorThread(unittest.TestCase):
         def utime(fname, atm):
             self.assertEqual(fname, filename)
             self.assertIsNone(atm)
-            raise OSError(2, fname)
+            raise OSError(errno.ENOENT, fname)
 
         with patched(os, 'utime', utime):
             self.thread.run(forever=False)
