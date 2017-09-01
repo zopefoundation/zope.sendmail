@@ -15,6 +15,7 @@
 """
 __docformat__ = 'restructuredtext'
 
+from threading import local
 from ssl import SSLError
 from smtplib import SMTP
 
@@ -36,9 +37,20 @@ class SMTPMailer(object):
         self.password = password
         self.force_tls = force_tls
         self.no_tls = no_tls
-        self.connection = None
-        self.code = None
-        self.response = None
+        self._smtp = local()
+        self._smtp.connection = None
+        self._smtp.code = None
+        self._smtp.response = None
+
+    def _make_property(name):
+        return property(lambda self: getattr(self._smtp, name),
+                        lambda self, nv: setattr(self._smtp, name, nv))
+
+    connection = _make_property('connection')
+    code = _make_property('code')
+    response = _make_property('response')
+
+    del _make_property
 
     def vote(self, fromaddr, toaddrs, message):
         self.connection = self.smtp(self.hostname, str(self.port))
@@ -52,19 +64,21 @@ class SMTPMailer(object):
 
         self.code, self.response = code, response
 
+    def _close_connection(self):
+        try:
+            self.connection.quit()
+        except SSLError:
+            # something weird happened while quiting
+            self.connection.close()
+        self.connection = None
 
     def abort(self):
         if self.connection is None:
             return
-
-        try:
-            self.connection.quit()
-        except SSLError:
-            #something weird happened while quiting
-            self.connection.close()
+        self._close_connection()
 
     def send(self, fromaddr, toaddrs, message):
-        connection = getattr(self, 'connection', None)
+        connection = self.connection
         if connection is None:
             self.vote(fromaddr, toaddrs, message)
 
@@ -91,9 +105,7 @@ class SMTPMailer(object):
             raise RuntimeError('Mailhost does not support ESMTP but a username '
                                'is configured')
 
-        connection.sendmail(fromaddr, toaddrs, message)
         try:
-            connection.quit()
-        except SSLError:
-            #something weird happened while quiting
-            connection.close()
+            connection.sendmail(fromaddr, toaddrs, message)
+        finally:
+            self._close_connection()

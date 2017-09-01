@@ -37,6 +37,8 @@ class SMTP(object):
         assert isinstance(p, port_types)
 
     def sendmail(self, f, t, m):
+        assert not self.closed
+        assert not self.quitted
         self.fromaddr = f
         self.toaddrs = t
         self.msgtext = m
@@ -114,6 +116,26 @@ class TestSMTPMailer(unittest.TestCase):
             self.assertEqual(self.smtp.msgtext, msgtext)
             self.assertTrue(self.smtp.quitted)
             self.assertTrue(self.smtp.closed)
+
+    def test_send_multiple_same_mailer(self):
+        # The mailer re-opens itself as needed when sending
+        # multiple mails.
+        smtps = []
+        def hook(smtp):
+            smtps.append(smtp)
+        self.smtp_hook = hook
+        for run in (1, 2):
+            fromaddr = 'me@example.com' + str(run)
+            toaddrs = ('you@example.com', 'him@example.com')
+            msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
+            self.mailer.send(fromaddr, toaddrs, msgtext)
+            self.assertEqual(self.smtp.fromaddr, fromaddr)
+            self.assertEqual(self.smtp.toaddrs, toaddrs)
+            self.assertEqual(self.smtp.msgtext, msgtext)
+            self.assertTrue(self.smtp.quitted)
+            self.assertTrue(self.smtp.closed)
+
+        self.assertEqual(2, len(smtps))
 
     def test_send_auth(self):
         fromaddr = 'me@example.com'
