@@ -8,3 +8,5 @@ bin/
 develop-eggs/
 eggs/
 parts/
+.coverage
+htmlcov/

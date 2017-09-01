@@ -14,10 +14,10 @@
 """Mail delivery names vocabulary test
 """
 import unittest
+from zope.component.testing import PlacelessSetup
 
-
-class MailDeliveryNamesTests(unittest.TestCase):
-    from zope.component.testing import setUp, tearDown
+class MailDeliveryNamesTests(PlacelessSetup,
+                             unittest.TestCase):
 
     _marker = object()
 
@@ -36,11 +36,9 @@ class MailDeliveryNamesTests(unittest.TestCase):
 
         provideUtility(MailDeliveryNames, name='Mail Delivery Names')
 
-    def _callFUT(self, context=_marker):
+    def _callFUT(self):
         from zope.sendmail.vocabulary import MailDeliveryNames
-        if context is self._marker:
-            return MailDeliveryNames()
-        return MailDeliveryNames(context)
+        return MailDeliveryNames()
 
     def test_default(self):
         NAMES = 'and now for something completely different'.split()
@@ -50,6 +48,4 @@ class MailDeliveryNamesTests(unittest.TestCase):
         self.assertEqual(names, sorted(NAMES))
 
 def test_suite():
-    return unittest.TestSuite([
-        unittest.makeSuite(MailDeliveryNamesTests),
-        ])
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)

@@ -25,11 +25,12 @@ from random import randrange
 from time import strftime
 from socket import gethostname
 
+from transaction.interfaces import IDataManager
+import transaction
+
 from zope.interface import implementer
 from zope.sendmail.interfaces import IDirectMailDelivery, IQueuedMailDelivery
 from zope.sendmail.maildir import Maildir
-from transaction.interfaces import IDataManager
-import transaction
 
 # BBB: this import is needed for backward compatibility with older versions of
 # zope.sendmail which defined QueueProcessorThread in this module
@@ -48,35 +49,35 @@ class MailDataManager(object):
         # Use the default thread transaction manager.
         self.transaction_manager = transaction.manager
 
-    def commit(self, transaction):
+    def commit(self, txn):
         pass
 
-    def abort(self, transaction):
-         if self.onAbort:
+    def abort(self, txn):
+        if self.onAbort:
             self.onAbort()
 
     def sortKey(self):
         return str(id(self))
 
     # No subtransaction support.
-    def abort_sub(self, transaction):
-        pass
+    def abort_sub(self, txn):
+        "This object does not do anything with subtransactions"
 
     commit_sub = abort_sub
 
-    def beforeCompletion(self, transaction):
-        pass
+    def beforeCompletion(self, txn):
+        "This object does not do anything in beforeCompletion"
 
     afterCompletion = beforeCompletion
 
-    def tpc_begin(self, transaction, subtransaction=False):
+    def tpc_begin(self, txn, subtransaction=False):
         assert not subtransaction
 
-    def tpc_vote(self, transaction):
+    def tpc_vote(self, txn):
         if self.vote is not None:
             return self.vote(*self.args)
 
-    def tpc_finish(self, transaction):
+    def tpc_finish(self, txn):
         try:
             self.callable(*self.args)
         except Exception as e:
@@ -84,7 +85,7 @@ class MailDataManager(object):
             # Better to protect the data and potentially miss emails than
             # leave a database in an inconsistent state which requires a
             # guru to fix.
-            log.exception(e)
+            log.exception("Failed in tpc_finish for %r", self.callable)
 
     tpc_abort = abort
 
@@ -114,6 +115,9 @@ class AbstractMailDelivery(object):
             self.createDataManager(fromaddr, toaddrs, message))
         return messageid
 
+    def createDataManager(self, fromaddr, toaddrs, message):
+        raise NotImplementedError()
+
 
 @implementer(IDirectMailDelivery)
 class DirectMailDelivery(AbstractMailDelivery):
@@ -128,7 +132,7 @@ class DirectMailDelivery(AbstractMailDelivery):
         except AttributeError:
             # We've got an old mailer, just pass through voting
             warnings.warn("The mailer %s does not provide a vote method"
-                                    % (repr(self.mailer)), DeprecationWarning)
+                          % (repr(self.mailer)), DeprecationWarning)
 
             def vote(*args, **kwargs):
                 pass

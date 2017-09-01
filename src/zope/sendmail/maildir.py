@@ -68,8 +68,8 @@ class Maildir(object):
                         if not x.startswith('.')]
         # Sort by modification time so earlier messages are sent before
         # later messages during queue processing.
-        msgs_sorted = [(m, os.path.getmtime(m)) for m 
-                      in new_messages + cur_messages]
+        msgs_sorted = [(m, os.path.getmtime(m)) for m
+                       in new_messages + cur_messages]
         msgs_sorted.sort(key=lambda x: x[1])
         return iter([m[0] for m in msgs_sorted])
 
@@ -142,7 +142,7 @@ class MaildirMessageWriter(object):
             raise RuntimeError('Cannot commit, message already aborted')
         elif not self._finished:
             self._finished = True
-            self._fd.close()
+            self.close()
             os.rename(self._filename, self._new_filename)
             # NOTE: the same maildir.html says it should be a link, followed by
             #       unlink.  But Win32 does not necessarily have hardlinks!
@@ -154,8 +154,7 @@ class MaildirMessageWriter(object):
         if not self._finished:
             self._finished = True
             self._aborted = True
-            self._fd.close()
+            self.close()
             os.unlink(self._filename)
 
     # XXX: should there be a __del__ that calls abort()?
-

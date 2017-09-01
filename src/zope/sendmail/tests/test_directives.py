@@ -16,9 +16,8 @@
 import os
 import shutil
 import unittest
-import threading
 import tempfile
-import time
+
 
 import zope.component
 from zope.component.testing import PlacelessSetup
@@ -28,62 +27,58 @@ from zope.interface import implementer
 from zope.sendmail.interfaces import \
      IMailDelivery, IMailer, ISMTPMailer
 from zope.sendmail import delivery
-from zope.sendmail.queue import QueueProcessorThread
+from zope.sendmail import zcml
 import zope.sendmail.tests
 
 
 class MaildirStub(object):
-
-    def __init__(self, path, create=False):
-        self.path = path
-        self.create = create
-
-    def __iter__(self):
-        return iter(())
-
-    def newMessage(self):
-        return None
+    pass
 
 @implementer(IMailer)
 class Mailer(object):
     pass
 
+class MockQueueProcessorThread(object):
+
+    def setMailer(self, mailer):
+        pass
+
+    setQueuePath = setMailer
+
+    def start(self):
+        pass
+
 
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def setUp(self):
-        self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
-
         super(DirectivesTest, self).setUp()
-        self.testMailer = Mailer()
 
+        self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
+        self.addCleanup(shutil.rmtree, self.mailbox, True)
+        self.testMailer = Mailer()
+        self.smtpmailer = Mailer()
         gsm = zope.component.getGlobalSiteManager()
-        gsm.registerUtility(Mailer(), IMailer, "test.smtp")
+
+        gsm.registerUtility(self.smtpmailer, IMailer, "test.smtp")
         gsm.registerUtility(self.testMailer, IMailer, "test.mailer")
 
         here = os.path.dirname(__file__)
-        zcmlfile = open(os.path.join(here, "mail.zcml"), 'r')
-        zcml = zcmlfile.read()
-        zcmlfile.close()
+        with open(os.path.join(here, "mail.zcml"), 'r') as f:
+            self.zcml = f.read()
+        self.zcml = self.zcml.replace('path/to/tmp/mailbox', self.mailbox)
 
-        self.context = xmlconfig.string(
-            zcml.replace('path/to/tmp/mailbox', self.mailbox))
+        self.orig_quethread = zcml.QueueProcessorThread
         self.orig_maildir = delivery.Maildir
         delivery.Maildir = MaildirStub
+        zcml.QueueProcessorThread = MockQueueProcessorThread
+
+        self.context = xmlconfig.string(self.zcml)
 
     def tearDown(self):
         delivery.Maildir = self.orig_maildir
+        zcml.QueueProcessorThread = self.orig_quethread
 
-        # Tear down the mail queue processor thread.
-        # Give the other thread a chance to start:
-        time.sleep(0.001)
-        threads = list(threading.enumerate())
-        for thread in threads:
-            if isinstance(thread, QueueProcessorThread):
-                thread.stop()
-                thread.join()
-
-        shutil.rmtree(self.mailbox, True)
         super(DirectivesTest, self).tearDown()
 
     def testQueuedDelivery(self):
@@ -101,10 +96,27 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         self.assertTrue(ISMTPMailer.providedBy(mailer))
 
 
+    def _check_zcml_without_registration(self, utility, name):
+        gsm = zope.component.getGlobalSiteManager()
+        gsm.unregisterUtility(utility, IMailer, name)
+        from zope.configuration.exceptions import ConfigurationError
+        with self.assertRaises(ConfigurationError) as exc:
+            xmlconfig.string(self.zcml)
+
+        # A ConfigurationExecutionException wraps the ConfigurationError
+        # we're interested in.
+        msg = str(exc.exception.evalue)
+        self.assertIn(name, msg)
+        self.assertIn('is not defined', msg)
+
+    def test_zcml_without_registered_smtp_mailer(self):
+        self._check_zcml_without_registration(self.smtpmailer, 'test.smtp')
+
+    def test_zcml_without_registered_mailer(self):
+        self._check_zcml_without_registration(self.testMailer, 'test.mailer')
+
 def test_suite():
-    return unittest.TestSuite((
-        unittest.makeSuite(DirectivesTest),
-        ))
+    return unittest.defaultTestLoader.loadTestsFromName(__name__)
 
 if __name__ == '__main__':
     unittest.main()

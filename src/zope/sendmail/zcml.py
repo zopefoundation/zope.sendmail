@@ -15,7 +15,7 @@
 """
 __docformat__ = 'restructuredtext'
 
-from zope.component import queryUtility
+from zope.component import getUtility
 from zope.component.zcml import handler
 from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
@@ -30,17 +30,17 @@ from zope.sendmail.queue import QueueProcessorThread
 try:
     from zope.component.security import proxify
     from zope.security.zcml import Permission
-except ImportError:
+except ImportError: # pragma: no cover
     SECURITY_SUPPORT = False
-    from zope.schema import TextLine as Permission
+    Permission = TextLine
+
+    def _assertPermission(permission, interfaces, component):
+        raise ConfigurationError("security proxied components are not "
+                                 "supported because zope.security is not available")
 else:
     SECURITY_SUPPORT = True
-
-def _assertPermission(permission, interfaces, component):
-    if not SECURITY_SUPPORT:
-        raise ConfigurationError("security proxied components are not "
-            "supported because zope.security is not available")
-    return proxify(component, provides=interfaces, permission=permission)
+    def _assertPermission(permission, interfaces, component):
+        return proxify(component, provides=interfaces, permission=permission)
 
 
 class IDeliveryDirective(Interface):
@@ -76,14 +76,20 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
 
     processorThread = Bool(
         title=u"Run Queue Processor Thread",
-        description=u"Indicates whether to run queue processor in a thread "
-            "in this process.",
+        description=(u"Indicates whether to run queue processor in a thread "
+                     u"in this process."),
         required=False,
         default=True)
 
+def _get_mailer(mailer):
+    try:
+        return getUtility(IMailer, mailer)
+    except LookupError:
+        raise ConfigurationError("Mailer %r is not defined" % mailer)
+
 
 def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
-    processorThread=True):
+                   processorThread=True):
 
     def createQueuedDelivery():
         delivery = QueuedMailDelivery(queuePath)
@@ -92,9 +98,7 @@ def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
 
         handler('registerUtility', delivery, IMailDelivery, name)
 
-        mailerObject = queryUtility(IMailer, mailer)
-        if mailerObject is None:
-            raise ConfigurationError("Mailer %r is not defined" %mailer)
+        mailerObject = _get_mailer(mailer)
 
         if processorThread:
             thread = QueueProcessorThread()
@@ -103,9 +107,9 @@ def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
             thread.start()
 
     _context.action(
-            discriminator = ('utility', IMailDelivery, name),
-            callable = createQueuedDelivery,
-            args = () )
+        discriminator=('utility', IMailDelivery, name),
+        callable=createQueuedDelivery,
+        args=())
 
 class IDirectDeliveryDirective(IDeliveryDirective):
     """This directive creates and registers a global direct mail utility. It
@@ -114,9 +118,7 @@ class IDirectDeliveryDirective(IDeliveryDirective):
 def directDelivery(_context, mailer, permission=None, name="Mail"):
 
     def createDirectDelivery():
-        mailerObject = queryUtility(IMailer, mailer)
-        if mailerObject is None:
-            raise ConfigurationError("Mailer %r is not defined" %mailer)
+        mailerObject = _get_mailer(mailer)
 
         delivery = DirectMailDelivery(mailerObject)
         if permission is not None:
@@ -125,9 +127,9 @@ def directDelivery(_context, mailer, permission=None, name="Mail"):
         handler('registerUtility', delivery, IMailDelivery, name)
 
     _context.action(
-            discriminator = ('utility', IMailDelivery, name),
-            callable = createDirectDelivery,
-            args = () )
+        discriminator=('utility', IMailDelivery, name),
+        callable=createDirectDelivery,
+        args=())
 
 class IMailerDirective(Interface):
     """A generic directive registering a mailer for the mail utility."""
@@ -166,8 +168,8 @@ class ISMTPMailerDirective(IMailerDirective):
 def smtpMailer(_context, name, hostname="localhost", port="25",
                username=None, password=None):
     _context.action(
-        discriminator = ('utility', IMailer, name),
-        callable = handler,
-        args = ('registerUtility',
-                SMTPMailer(hostname, port, username, password), IMailer, name)
-        )
+        discriminator=('utility', IMailer, name),
+        callable=handler,
+        args=('registerUtility',
+              SMTPMailer(hostname, port, username, password), IMailer, name)
+    )

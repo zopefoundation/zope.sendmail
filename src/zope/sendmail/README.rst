@@ -1,5 +1,6 @@
-Using zope.sendmail
-===================
+=====================
+ Using zope.sendmail
+=====================
 
 This package is useful when your Zope 3 application wants to send email.  It
 integrates with the transaction mechanism and queues your emails to be sent on
@@ -7,7 +8,7 @@ successful commits only.
 
 
 API
----
+===
 
 An application that wants to send an email can do so by getting the appropriate
 IMailDelivery utility.  The standard library's email module is useful for
@@ -33,7 +34,7 @@ http://mg.pov.lt/blog/unicode-emails-in-python.html
 
 
 Configuration
--------------
+=============
 
 The code above used a named IMailDelivery utility.  It is your responsibility
 to define one, as Zope 3 doesn't provide one by default.  You can define
@@ -60,7 +61,7 @@ time of web pages.
 
 
 Mailers
--------
+=======
 
 The ``mailer`` argument of the ``mail:queuedDelivery`` utility chooses the
 appropriate IMailer utility that will be used to deliver email.  There
@@ -96,7 +97,7 @@ different SMTP server, define your own utility like this::
 
 
 Testing
--------
+=======
 
 Obviously, you don't want your automated unit/functional test runs to send
 real emails.  You'll have to define a fake email delivery utility in your
@@ -116,7 +117,7 @@ Register it with the standard ``utility`` directive::
 
 
 Problems with zope.sendmail
----------------------------
+===========================
 
 * The API is a bit inconvenient to use (e.g. you have to do the message
   formatting by yourself).

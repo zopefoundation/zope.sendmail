@@ -25,12 +25,13 @@ import smtplib
 import stat
 import threading
 import time
+import errno
 
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.mailer import SMTPMailer
 
 import sys
-if sys.platform == 'win32':
+if sys.platform == 'win32': # pragma: no cover
     import win32file
     _os_link = lambda src, dst: win32file.CreateHardLink(dst, src, None)
 else:
@@ -108,10 +109,12 @@ class QueueProcessorThread(threading.Thread):
     log = logging.getLogger("QueueProcessorThread")
     _stopped = False
     interval = 3.0   # process queue every X second
+    maildir = None
+    mailer = None
 
     def __init__(self, interval=3.0):
         threading.Thread.__init__(self,
-                name="zope.sendmail.queue.QueueProcessorThread")
+                                  name="zope.sendmail.queue.QueueProcessorThread")
         self.interval = interval
         self._lock = threading.Lock()
         self.setDaemon(True)
@@ -123,8 +126,11 @@ class QueueProcessorThread(threading.Thread):
         """
         self.maildir = maildir
 
+    def _makeMaildir(self, path):
+        return Maildir(path, True)
+
     def setQueuePath(self, path):
-        self.maildir = Maildir(path, True)
+        self.setMaildir(self._makeMaildir(path))
 
     def setMailer(self, mailer):
         self.mailer = mailer
@@ -156,6 +162,21 @@ class QueueProcessorThread(threading.Thread):
 
         return fromaddr, toaddrs, rest
 
+    def _action_if_exists(self, fname, func, default=None):
+        # apply the func to the fname, ignoring exceptions that
+        # happen when the file does not exist.
+        try:
+            return func(fname)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                # The file existed, but something unexpected
+                # happened. Report it
+                raise
+            return default
+
+    def _unlink_if_exists(self, fname):
+        self._action_if_exists(fname, os.unlink)
+
     def run(self, forever=True):
         atexit.register(self.stop)
         while not self._stopped:
@@ -163,161 +184,7 @@ class QueueProcessorThread(threading.Thread):
                 # if we are asked to stop while sending messages, do so
                 if self._stopped:
                     break
-
-                fromaddr = ''
-                toaddrs = ()
-                head, tail = os.path.split(filename)
-                tmp_filename = os.path.join(head, '.sending-' + tail)
-                rejected_filename = os.path.join(head, '.rejected-' + tail)
-                try:
-                    # perform a series of operations in an attempt to ensure
-                    # that no two threads/processes send this message
-                    # simultaneously as well as attempting to not generate
-                    # spurious failure messages in the log; a diagram that
-                    # represents these operations is included in a
-                    # comment above this class
-                    try:
-                        # find the age of the tmp file (if it exists)
-                        age = None
-                        mtime = os.stat(tmp_filename)[stat.ST_MTIME]
-                        age = time.time() - mtime
-                    except OSError as e:
-                        if e.errno == 2: # file does not exist
-                            # the tmp file could not be stated because it
-                            # doesn't exist, that's fine, keep going
-                            pass
-                        else:
-                            # the tmp file could not be stated for some reason
-                            # other than not existing; we'll report the error
-                            raise
-
-                    # if the tmp file exists, check its age
-                    if age is not None:
-                        try:
-                            if age > MAX_SEND_TIME:
-                                # the tmp file is "too old"; this suggests
-                                # that during an attempt to send it, the
-                                # process died; remove the tmp file so we
-                                # can try again
-                                os.unlink(tmp_filename)
-                            else:
-                                # the tmp file is "new", so someone else may
-                                # be sending this message, try again later
-                                continue
-                            # if we get here, the file existed, but was too
-                            # old, so it was unlinked
-                        except OSError as e:
-                            if e.errno == 2: # file does not exist
-                                # it looks like someone else removed the tmp
-                                # file, that's fine, we'll try to deliver the
-                                # message again later
-                                continue
-
-                    # now we know that the tmp file doesn't exist, we need to
-                    # "touch" the message before we create the tmp file so the
-                    # mtime will reflect the fact that the file is being
-                    # processed (there is a race here, but it's OK for two or
-                    # more processes to touch the file "simultaneously")
-                    try:
-                        os.utime(filename, None)
-                    except OSError as e:
-                        if e.errno == 2: # file does not exist
-                            # someone removed the message before we could
-                            # touch it, no need to complain, we'll just keep
-                            # going
-                            continue
-
-                    # creating this hard link will fail if another process is
-                    # also sending this message
-                    try:
-                        #os.link(filename, tmp_filename)
-                        _os_link(filename, tmp_filename)
-                    except OSError as e:
-                        if e.errno == 17: # file exists, *nix
-                            # it looks like someone else is sending this
-                            # message too; we'll try again later
-                            continue
-                    except Exception as e:
-                        if e[0] == 183 and e[1] == 'CreateHardLink':
-                            # file exists, win32
-                            continue
-
-                    # read message file and send contents
-                    file = open(filename)
-                    message = file.read()
-                    file.close()
-                    fromaddr, toaddrs, message = self._parseMessage(message)
-                    # The next block is the only one that is sensitive to
-                    # interruptions.  Everywhere else, if this daemon thread
-                    # stops, we should be able to correctly handle a restart.
-                    # In this block, if we send the message, but we are
-                    # stopped before we unlink the file, we will resend the
-                    # message when we are restarted.  We limit the likelihood
-                    # of this somewhat by using a lock to link the two
-                    # operations.  When the process gets an interrupt, it
-                    # will call the atexit that we registered (``stop``
-                    # below).  This will try to get the same lock before it
-                    # lets go.  Because this can cause the daemon thread to
-                    # continue (that is, to not act like a daemon thread), we
-                    # still use the _stopped flag to communicate.
-                    self._lock.acquire()
-                    try:
-                        try:
-                            self.mailer.send(fromaddr, toaddrs, message)
-                        except smtplib.SMTPResponseException as e:
-                            if 500 <= e.smtp_code <= 599:
-                                # permanent error, ditch the message
-                                self.log.error(
-                                    "Discarding email from %s to %s due to"
-                                    " a permanent error: %s",
-                                    fromaddr, ", ".join(toaddrs), str(e))
-                                #os.link(filename, rejected_filename)
-                                _os_link(filename, rejected_filename)
-                            else:
-                                # Log an error and retry later
-                                raise
-                        except smtplib.SMTPRecipientsRefused as e:
-                            # All recipients are refused by smtp
-                            # server. Dont try to redeliver the message.
-                            self.log.error("Email recipients refused: %s",
-                                           ', '.join(e.recipients))
-                            _os_link(filename, rejected_filename)
-
-                        try:
-                            os.unlink(filename)
-                        except OSError as e:
-                            if e.errno == 2: # file does not exist
-                                # someone else unlinked the file; oh well
-                                pass
-                            else:
-                                # something bad happened, log it
-                                raise
-                    finally:
-                        self._lock.release()
-                    try:
-                        os.unlink(tmp_filename)
-                    except OSError as e:
-                        if e.errno == 2: # file does not exist
-                            # someone else unlinked the file; oh well
-                            pass
-                        else:
-                            # something bad happened, log it
-                            raise
-
-                    # TODO: maybe log the Message-Id of the message sent
-                    self.log.info("Mail from %s to %s sent.",
-                                  fromaddr, ", ".join(toaddrs))
-                    # Blanket except because we don't want
-                    # this thread to ever die
-                except:
-                    if fromaddr != '' or toaddrs != ():
-                        self.log.error(
-                            "Error while sending mail from %s to %s.",
-                            fromaddr, ", ".join(toaddrs), exc_info=True)
-                    else:
-                        self.log.error(
-                            "Error while sending mail : %s ",
-                            filename, exc_info=True)
+                self._process_one_file(filename)
             else:
                 if forever:
                     time.sleep(self.interval)
@@ -325,6 +192,144 @@ class QueueProcessorThread(threading.Thread):
             # A testing plug
             if not forever:
                 break
+
+    def _process_one_file(self, filename):
+        fromaddr = ''
+        toaddrs = ()
+        head, tail = os.path.split(filename)
+        tmp_filename = os.path.join(head, '.sending-' + tail)
+        rejected_filename = os.path.join(head, '.rejected-' + tail)
+        try:
+            # perform a series of operations in an attempt to ensure
+            # that no two threads/processes send this message
+            # simultaneously as well as attempting to not generate
+            # spurious failure messages in the log; a diagram that
+            # represents these operations is included in a
+            # comment above this class
+
+            # find the age of the tmp file (if it exists)
+            mtime = self._action_if_exists(tmp_filename,
+                                           lambda fname: os.stat(fname)[stat.ST_MTIME])
+            age = time.time() - mtime if mtime is not None else None
+
+            # if the tmp file exists, check its age
+            if age is not None:
+                if age > MAX_SEND_TIME:
+                    # the tmp file is "too old"; this suggests
+                    # that during an attempt to send it, the
+                    # process died; remove the tmp file so we
+                    # can try again
+                    try:
+                        os.unlink(tmp_filename)
+                    except OSError as e:
+                        if e.errno == errno.ENOENT: # file does not exist
+                            # it looks like someone else removed the tmp
+                            # file, that's fine, we'll try to deliver the
+                            # message again later
+                            return
+                        # XXX: we're silently ignoring the exception here. Is that right?
+                        # If permissions or something are not right, we'll fail
+                        # on _os_link later on.
+                    # if we get here, the file existed, but was too
+                    # old, so it was unlinked
+                else:
+                    # the tmp file is "new", so someone else may
+                    # be sending this message, try again later
+                    return
+
+            # now we know (hope, given the above XXX) that the
+            # tmp file doesn't exist, we need to "touch" the
+            # message before we create the tmp file so the
+            # mtime will reflect the fact that the file is
+            # being processed (there is a race here, but it's
+            # OK for two or more processes to touch the file
+            # "simultaneously")
+            try:
+                os.utime(filename, None)
+            except OSError as e:
+                if e.errno == errno.ENOENT: # file does not exist
+                    # someone removed the message before we could
+                    # touch it, no need to complain, we'll just keep
+                    # going
+                    return
+                # XXX: Silently ignoring all other errors
+
+            # creating this hard link will fail if another process is
+            # also sending this message
+            try:
+                #os.link(filename, tmp_filename)
+                _os_link(filename, tmp_filename)
+            except OSError as e:
+                if e.errno == errno.EEXIST: # file exists, *nix
+                    # it looks like someone else is sending this
+                    # message too; we'll try again later
+                    return
+                # XXX: Silently ignoring all other errno
+            except Exception as e: # pragma: no cover
+                if e[0] == 183 and e[1] == 'CreateHardLink':
+                    # file exists, win32
+                    return
+                # XXX: Silently ignoring all other causes here.
+
+            # read message file and send contents
+            with open(filename) as f:
+                message = f.read()
+
+            fromaddr, toaddrs, message = self._parseMessage(message)
+            # The next block is the only one that is sensitive to
+            # interruptions.  Everywhere else, if this daemon thread
+            # stops, we should be able to correctly handle a restart.
+            # In this block, if we send the message, but we are
+            # stopped before we unlink the file, we will resend the
+            # message when we are restarted.  We limit the likelihood
+            # of this somewhat by using a lock to link the two
+            # operations.  When the process gets an interrupt, it
+            # will call the atexit that we registered (``stop``
+            # below).  This will try to get the same lock before it
+            # lets go.  Because this can cause the daemon thread to
+            # continue (that is, to not act like a daemon thread), we
+            # still use the _stopped flag to communicate.
+            with self._lock:
+                try:
+                    self.mailer.send(fromaddr, toaddrs, message)
+                except smtplib.SMTPResponseException as e:
+                    if 500 <= e.smtp_code <= 599:
+                        # permanent error, ditch the message
+                        self.log.error(
+                            "Discarding email from %s to %s due to"
+                            " a permanent error: %s",
+                            fromaddr, ", ".join(toaddrs), str(e))
+                        #os.link(filename, rejected_filename)
+                        _os_link(filename, rejected_filename)
+                    else:
+                        # Log an error and retry later
+                        raise
+                except smtplib.SMTPRecipientsRefused as e:
+                    # All recipients are refused by smtp
+                    # server. Dont try to redeliver the message.
+                    self.log.error("Email recipients refused: %s",
+                                   ', '.join(e.recipients))
+                    _os_link(filename, rejected_filename)
+
+                self._unlink_if_exists(filename)
+
+            self._unlink_if_exists(tmp_filename)
+
+            # TODO: maybe log the Message-Id of the message sent
+            self.log.info("Mail from %s to %s sent.",
+                          fromaddr, ", ".join(toaddrs))
+            # Blanket except because we don't want
+            # this thread to ever die
+        except:
+            if fromaddr != '' or toaddrs != ():
+                self.log.error(
+                    "Error while sending mail from %s to %s.",
+                    fromaddr, ", ".join(toaddrs), exc_info=True)
+            else:
+                self.log.error(
+                    "Error while sending mail : %s ",
+                    filename, exc_info=True)
+
 
     def stop(self):
         self._stopped = True
@@ -390,7 +395,7 @@ class ConsoleApp(object):
                            "following keys: %s. If you specify the queue path "
                            "in the ini file, you don't need to specify it on "
                            "the command line." % (INI_SECTION,
-                                                   ', '.join(INI_NAMES)))
+                                                  ', '.join(INI_NAMES)))
 
     daemon = False
     interval = 3
@@ -402,17 +407,19 @@ class ConsoleApp(object):
     no_tls = False
     queue_path = None
 
+    QueueProcessorKind = QueueProcessorThread
+    MailerKind = SMTPMailer
+
     def __init__(self, argv=None, verbose=True):
-        if argv is None:
-            argv = sys.argv
+        argv = sys.argv if argv is None else argv
         self.script_name = argv[0]
         self.verbose = verbose
         self._process_args(argv[1:])
-        self.mailer = SMTPMailer(self.hostname, self.port, self.username,
-            self.password, self.no_tls, self.force_tls)
+        self.mailer = self.MailerKind(self.hostname, self.port, self.username,
+                                      self.password, self.no_tls, self.force_tls)
 
     def main(self):
-        queue = QueueProcessorThread(self.interval)
+        queue = self.QueueProcessorKind(self.interval)
         queue.setMailer(self.mailer)
         queue.setQueuePath(self.queue_path)
         queue.run(forever=self.daemon)
@@ -456,11 +463,11 @@ class ConsoleApp(object):
         self.no_tls = boolean(config.get(section, "no_tls"))
         self.queue_path = string_or_none(config.get(section, "queue_path"))
 
-def run():
+def run(argv=None):
     logging.basicConfig()
-    app = ConsoleApp()
+    app = ConsoleApp(argv)
     app.main()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     run()
