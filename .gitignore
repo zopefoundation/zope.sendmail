@@ -10,3 +10,4 @@ eggs/
 parts/
 .coverage
 htmlcov/
+docs/_build/
