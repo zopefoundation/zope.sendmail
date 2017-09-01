@@ -137,6 +137,31 @@ class TestSMTPMailer(unittest.TestCase):
 
         self.assertEqual(2, len(smtps))
 
+
+    def test_send_multiple_threads(self):
+        import threading
+
+        results = []
+        def run():
+            try:
+                self.test_send_multiple_same_mailer()
+            except BaseException as e: # pragma: no cover
+                results.append(e)
+                raise
+            else:
+                results.append(True)
+
+        threads = []
+        for _ in range(2):
+            threads.append(threading.Thread(target=run))
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self.assertEqual([True for _ in threads], results)
+
     def test_send_auth(self):
         fromaddr = 'me@example.com'
         toaddrs = ('you@example.com', 'him@example.com')

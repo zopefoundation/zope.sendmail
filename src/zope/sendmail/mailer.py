@@ -23,6 +23,10 @@ from zope.interface import implementer
 from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail._compat import text_type
 
+class _SMTPState(local):
+    connection = None
+    code = None
+    response = None
 
 @implementer(ISMTPMailer)
 class SMTPMailer(object):
@@ -37,10 +41,7 @@ class SMTPMailer(object):
         self.password = password
         self.force_tls = force_tls
         self.no_tls = no_tls
-        self._smtp = local()
-        self._smtp.connection = None
-        self._smtp.code = None
-        self._smtp.response = None
+        self._smtp = _SMTPState()
 
     def _make_property(name):
         return property(lambda self: getattr(self._smtp, name),
