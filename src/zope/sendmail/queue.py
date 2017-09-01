@@ -374,10 +374,10 @@ class ConsoleApp(object):
     smtp_group = parser.add_argument_group("SMTP Server",
                                            "Connection information for the SMTP server")
     smtp_group.add_argument('--hostname', default='localhost',
-                            help=("Name of smtp host to use for delivery.  Default is "
+                            help=("Name of SMTP host to use for delivery.  Default is "
                                   "%(default)s."))
     smtp_group.add_argument('--port', type=int, default=25,
-                            help=("Which port on smtp server to deliver mail to. "
+                            help=("Which port on SMTP server to deliver mail to. "
                                   "Default is %(default)s."))
 
     auth_group = parser.add_argument_group("Authentication",
@@ -385,10 +385,10 @@ class ConsoleApp(object):
                                             "If one is provided, they must both be. One or both "
                                             "can be provided in the --config file."))
     auth_group.add_argument('--username',
-                            help=("Username to use to log in to smtp server.  Default "
+                            help=("Username to use to log in to SMTP server.  Default "
                                   "is none."))
     auth_group.add_argument('--password',
-                            help=("Password to use to log in to smtp server.  Must be "
+                            help=("Password to use to log in to SMTP server.  Must be "
                                   "specified if username is specified."))
     del auth_group
     tls_group = smtp_group.add_mutually_exclusive_group()
