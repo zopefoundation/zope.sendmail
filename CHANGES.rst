@@ -28,6 +28,13 @@
   generally more clear. Specifying a ``--config`` path that doesn't
   exist is now an error instead of being silently ignored.
 
+- Fix SMTPMailer sending more than one message. It now reconnects to
+  the SMTP server as needed. Previously it could only send one message
+  since it closed the connection after each send. This also makes the
+  SMTPMailer thread safe. See `issue 1
+  <https://github.com/zopefoundation/zope.sendmail/issues/1>`_.
+
+
 4.0.1 (2014-12-29)
 ==================
 
