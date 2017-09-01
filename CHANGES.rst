@@ -23,6 +23,11 @@
 
 - Reach 100% test coverage and maintain it via tox.ini and Travis CI.
 
+- Replaced deprecated dependency on ``optparse`` with equivalent
+  ``argparse``. The help messages have changed and errors are
+  generally more clear. Specifying a ``--config`` path that doesn't
+  exist is now an error instead of being silently ignored.
+
 4.0.1 (2014-12-29)
 ==================
 

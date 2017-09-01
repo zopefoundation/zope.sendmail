@@ -376,17 +376,26 @@ class TestConsoleApp(unittest.TestCase):
         self.delivery = QueuedMailDelivery(self.queue_dir)
         self.maildir = Maildir(self.queue_dir, True)
         self.mailer = MailerStub()
-        self.real_stderr = sys.stderr
-        self.stderr = io.StringIO() if bytes is not str else io.BytesIO()
+        io_type = io.StringIO if bytes is not str else io.BytesIO
+        self.stderr = io_type()
+        self.stdout = io_type()
 
     def tearDown(self):
-        sys.stderr = self.real_stderr
         shutil.rmtree(self.dir)
+
+    def _make_one(self, cmdline):
+        cmdline = cmdline.split() if isinstance(cmdline, str) else cmdline
+        with patched(sys, 'stdout', self.stdout), \
+             patched(sys, 'stderr', self.stderr):
+            return ConsoleApp(cmdline, verbose=False)
+
+    def _get_output(self):
+        return self.stderr.getvalue() + self.stdout.getvalue()
 
     def test_args_processing(self):
         # simplest case that works
         cmdline = "zope-sendmail %s" % self.dir
-        app = ConsoleApp(cmdline.split(), verbose=False)
+        app = self._make_one(cmdline)
         self.assertEqual("zope-sendmail", app.script_name)
         self.assertEqual(self.dir, app.queue_path)
         self.assertFalse(app.daemon)
@@ -401,15 +410,18 @@ class TestConsoleApp(unittest.TestCase):
     def test_args_processing_no_queue_path(self):
         # simplest case that doesn't work: no queue path specified
         cmdline = "zope-sendmail"
-        sys.stderr = self.stderr
-        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
+        with self.assertRaises(SystemExit):
+            self._make_one(cmdline)
+
+        self.assertIn('please specify the queue path', self._get_output())
 
     def test_args_processing_almost_all_options(self):
         # use (almost) all of the options
         cmdline = "zope-sendmail --daemon --interval 7 --hostname foo --port 75 " \
             "--username chris --password rossi --force-tls " \
             "%s" % self.dir
-        app = ConsoleApp(cmdline.split(), verbose=False)
+        app = self._make_one(cmdline)
         self.assertEqual("zope-sendmail", app.script_name)
         self.assertEqual(self.dir, app.queue_path)
         self.assertTrue(app.daemon)
@@ -424,21 +436,28 @@ class TestConsoleApp(unittest.TestCase):
         # Add an extra argument
         cmdline += ' another-one'
         with self.assertRaises(SystemExit):
-            ConsoleApp(cmdline.split(), verbose=False)
+            self._make_one(cmdline)
 
-        # self.assertIn('too many arguments', self.stderr.getvalue())
+        self.assertIn('unrecognized argument', self._get_output())
 
     def test_args_processing_username_without_password(self):
         # test username without password
         cmdline = "zope-sendmail --username chris %s" % self.dir
-        sys.stderr = self.stderr
-        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
+        with self.assertRaises(SystemExit):
+            self._make_one(cmdline)
+
+        self.assertIn('Must use username and password together', self._get_output())
+
 
     def test_args_processing_force_tls_and_no_tls(self):
         # test force_tls and no_tls
         cmdline = "zope-sendmail --force-tls --no-tls %s" % self.dir
-        sys.stderr = self.stderr
-        self.assertRaises(SystemExit, ConsoleApp, cmdline.split(), verbose=False)
+
+        with self.assertRaises(SystemExit):
+            self._make_one(cmdline)
+
+        self.assertIn('--no-tls: not allowed with argument', self._get_output())
 
     def test_ini_parse(self):
         ini_path = os.path.join(self.dir, "zope-sendmail.ini")
@@ -473,6 +492,14 @@ class TestConsoleApp(unittest.TestCase):
         self.assertFalse(app.force_tls)
         self.assertFalse(app.no_tls)
 
+    def test_ini_not_exist(self):
+        cmdline = ['sendmail', '--config', 'this path cannot be opened']
+        with self.assertRaises(SystemExit) as exc:
+            self._make_one(cmdline)
+
+        self.assertIn('No such file or directory', self._get_output())
+        self.assertEqual(exc.exception.code, 2)
+
     def test_run(self):
         cmdline = ['sendmail', self.dir]
 
@@ -480,6 +507,15 @@ class TestConsoleApp(unittest.TestCase):
              patched(ConsoleApp, 'QueueProcessorKind', QPTesting), \
              patched(ConsoleApp, 'MailerKind', MailerStub):
             queue.run(cmdline)
+
+    def test_help(self):
+        cmdline = ['prog', '--help']
+
+        with self.assertRaises(SystemExit) as exc:
+            self._make_one(cmdline)
+
+        self.assertIn('usage', self._get_output())
+        self.assertEqual(exc.exception.code, 0)
 
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)
