@@ -28,10 +28,10 @@ from zope.sendmail._compat import text_type
 @provider(IMaildirFactory)
 @implementer(IMaildir)
 class Maildir(object):
-    """See `zope.sendmail.interfaces.IMaildir`"""
+    """See :class:`zope.sendmail.interfaces.IMaildir`"""
 
     def __init__(self, path, create=False):
-        "See `zope.sendmail.interfaces.IMaildirFactory`"
+        "See :class:`zope.sendmail.interfaces.IMaildirFactory`"
         self.path = path
 
         def access(path):
@@ -54,7 +54,7 @@ class Maildir(object):
             raise ValueError('%s is not a Maildir folder' % path)
 
     def __iter__(self):
-        "See `zope.sendmail.interfaces.IMaildir`"
+        "See :class:`zope.sendmail.interfaces.IMaildir`"
         join = os.path.join
         subdir_cur = join(self.path, 'cur')
         subdir_new = join(self.path, 'new')
@@ -74,7 +74,7 @@ class Maildir(object):
         return iter([m[0] for m in msgs_sorted])
 
     def newMessage(self):
-        "See `zope.sendmail.interfaces.IMaildir`"
+        "See :class:`zope.sendmail.interfaces.IMaildir`"
         # NOTE: http://www.qmail.org/man/man5/maildir.html says, that the first
         #       step of the delivery process should be a chdir.  Chdirs and
         #       threading do not mix.  Is that chdir really necessary?
@@ -117,7 +117,7 @@ def _encode_utf8(s):
 
 @implementer(IMaildirMessageWriter)
 class MaildirMessageWriter(object):
-    """See `zope.sendmail.interfaces.IMaildirMessageWriter`"""
+    """See :class:`zope.sendmail.interfaces.IMaildirMessageWriter`"""
 
 
     def __init__(self, fd, filename, new_filename):

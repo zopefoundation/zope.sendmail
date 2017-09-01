@@ -30,6 +30,7 @@ class _SMTPState(local):
 
 @implementer(ISMTPMailer)
 class SMTPMailer(object):
+    """Implementation of :class:`zope.sendmail.interfaces.ISMTPMailer`."""
 
     smtp = SMTP
 

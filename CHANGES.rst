@@ -5,6 +5,8 @@
 4.1.0 (unreleased)
 ==================
 
+- Host documentation at https://zopesendmail.readthedocs.io/
+
 - Make the data manager sort key a string, this fixes Python 3 where
   strings and integers are not sortable. This would happen when using
   other data managers with string sort keys.

@@ -11,7 +11,7 @@ API
 ===
 
 An application that wants to send an email can do so by getting the appropriate
-IMailDelivery utility.  The standard library's email module is useful for
+:class:`zope.sendmail.interfaces.IMailDelivery` utility.  The standard library's email module is useful for
 formatting the message according to RFC-2822::
 
     import email.MIMEText
@@ -36,7 +36,7 @@ http://mg.pov.lt/blog/unicode-emails-in-python.html
 Configuration
 =============
 
-The code above used a named IMailDelivery utility.  It is your responsibility
+The code above used a named :class:`~.IMailDelivery` utility.  It is your responsibility
 to define one, as Zope 3 doesn't provide one by default.  You can define
 an IMailDelivery utility in your site.zcml with a configuration directive::
 

@@ -31,6 +31,11 @@ EXTRAS_REQUIRE = {
     #':sys_platform == "win32"': ['pywin32'],
     # Because https://sourceforge.net/p/pywin32/bugs/680/
     ':sys_platform == "win32"': ['pypiwin32'],
+    'docs': [
+        'Sphinx',
+        'repoze.sphinx.autointerface',
+        'sphinxcontrib-programoutput',
+    ]
 }
 
 

@@ -16,6 +16,10 @@
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.sendmail/badge.svg?branch=master
         :target: https://coveralls.io/github/zopefoundation/zope.sendmail?branch=master
 
+.. image:: https://readthedocs.org/projects/zopesendmail/badge/?version=latest
+        :target: https://zopesendmail.readthedocs.io/en/latest/
+        :alt: Documentation Status
+
 zope.sendmail is a package for email sending from Zope 3 applications.
 Email sending from Zope 3 applications works as follows:
 
@@ -54,3 +58,5 @@ encapsulates the delivery process.  There currently is only one
 mailer:
 
 ``ISMTPMailer`` sends all messages to a relay host using SMTP.
+
+Documentation is hosted at https://zopesendmail.readthedocs.io/
