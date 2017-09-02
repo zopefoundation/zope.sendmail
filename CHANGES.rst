@@ -2,7 +2,7 @@
  Changes
 =========
 
-4.1.0 (unreleased)
+4.1.0 (2017-09-02)
 ==================
 
 - Host documentation at https://zopesendmail.readthedocs.io/
