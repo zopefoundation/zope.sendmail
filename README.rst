@@ -10,7 +10,7 @@
         :target: https://pypi.org/project/zope.sendmail/
         :alt: Supported Python versions
 
-.. image:: https://travis-ci.org/zopefoundation/zope.sendmail.png?branch=master
+.. image:: https://travis-ci.org/zopefoundation/zope.sendmail.svg?branch=master
         :target: https://travis-ci.org/zopefoundation/zope.sendmail
 
 .. image:: https://coveralls.io/repos/github/zopefoundation/zope.sendmail/badge.svg?branch=master
