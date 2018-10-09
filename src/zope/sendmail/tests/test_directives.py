@@ -95,7 +95,6 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         mailer = zope.component.getUtility(IMailer, "smtp")
         self.assertTrue(ISMTPMailer.providedBy(mailer))
 
-
     def _check_zcml_without_registration(self, utility, name):
         gsm = zope.component.getGlobalSiteManager()
         gsm.unregisterUtility(utility, IMailer, name)
@@ -103,9 +102,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         with self.assertRaises(ConfigurationError) as exc:
             xmlconfig.string(self.zcml)
 
-        # A ConfigurationExecutionException wraps the ConfigurationError
-        # we're interested in.
-        msg = str(exc.exception.evalue)
+        msg = str(exc.exception)
         self.assertIn(name, msg)
         self.assertIn('is not defined', msg)
 
@@ -114,6 +111,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def test_zcml_without_registered_mailer(self):
         self._check_zcml_without_registration(self.testMailer, 'test.mailer')
+
 
 def test_suite():
     return unittest.defaultTestLoader.loadTestsFromName(__name__)

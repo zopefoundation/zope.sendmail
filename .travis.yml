@@ -5,12 +5,13 @@ python:
     - 3.4
     - 3.5
     - 3.6
-    # Force a newer PyPy on the old 'precise' CI image
-    # in order to install 'cryptography' needed for coveralls
-    # After September 2017 this should be the default and the version
-    # pin can be removed.
-    - pypy-5.6.0
-    - pypy3.5-5.8.0
+    - pypy
+    - pypy3
+matrix:
+    include:
+        - python: "3.7"
+          dist: xenial
+          sudo: true
 install:
     - pip install -U pip setuptools
     - pip install -U coverage coveralls
