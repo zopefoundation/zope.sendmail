@@ -320,7 +320,7 @@ class QueueProcessorThread(threading.Thread):
                           fromaddr, ", ".join(toaddrs))
             # Blanket except because we don't want
             # this thread to ever die
-        except:
+        except Exception:
             if fromaddr != '' or toaddrs != ():
                 self.log.error(
                     "Error while sending mail from %s to %s.",
