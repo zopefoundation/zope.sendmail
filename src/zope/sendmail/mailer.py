@@ -1,3 +1,4 @@
+# coding=utf-8
 ##############################################################################
 #
 # Copyright (c) 2003 Zope Foundation and Contributors.
@@ -21,7 +22,9 @@ from smtplib import SMTP
 
 from zope.interface import implementer
 from zope.sendmail.interfaces import ISMTPMailer
+from zope.sendmail._compat import PY2
 from zope.sendmail._compat import text_type
+
 
 class _SMTPState(local):
     connection = None
@@ -98,9 +101,9 @@ class SMTPMailer(object):
         if connection.does_esmtp:
             if self.username is not None and self.password is not None:
                 username, password = self.username, self.password
-                if isinstance(username, text_type):
+                if PY2 and isinstance(username, text_type):
                     username = username.encode('utf-8')
-                if isinstance(password, text_type):
+                if PY2 and isinstance(password, text_type):
                     password = password.encode('utf-8')
                 connection.login(username, password)
         elif self.username:

@@ -5,7 +5,9 @@
 4.3 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix SMTP authentication on Python 3. See `issue 16
+  <https://github.com/zopefoundation/zope.sendmail/issues/16>`_.
+
 
 
 4.2 (2018-10-10)
