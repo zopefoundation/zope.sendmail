@@ -22,7 +22,6 @@ import logging
 import argparse
 import os
 import smtplib
-import stat
 import threading
 import time
 import errno
@@ -31,9 +30,11 @@ from zope.sendmail.maildir import Maildir
 from zope.sendmail.mailer import SMTPMailer
 
 import sys
-if sys.platform == 'win32': # pragma: no cover
+if sys.platform == 'win32':  # pragma: no cover
     import win32file
-    _os_link = lambda src, dst: win32file.CreateHardLink(dst, src, None)
+
+    def _os_link(src, dst):
+        return win32file.CreateHardLink(dst, src, None)
 else:
     _os_link = os.link
 
@@ -56,9 +57,9 @@ MAX_SEND_TIME = 60*60*3
 # Any error conditions not depicted on the diagram will provoke the catch-all
 # exception logging of the ``run`` method.
 #
-# In the diagram the "message file" is the file in the maildir's "cur" directory
-# that contains the message and "tmp file" is a hard link to the message file
-# created in the maildir's "tmp" directory.
+# In the diagram the "message file" is the file in the maildir's "cur"
+# directory that contains the message and "tmp file" is a hard link to the
+# message file created in the maildir's "tmp" directory.
 #
 #           ( start trying to deliver a message )
 #                            |
@@ -101,6 +102,7 @@ MAX_SEND_TIME = 60*60*3
 #                            V                    |
 #                  ( message delivered )<---------+
 
+
 class QueueProcessorThread(threading.Thread):
     """This thread is started at configuration time from the
     `mail:queuedDelivery` directive handler if processorThread is True.
@@ -113,8 +115,8 @@ class QueueProcessorThread(threading.Thread):
     mailer = None
 
     def __init__(self, interval=3.0):
-        threading.Thread.__init__(self,
-                                  name="zope.sendmail.queue.QueueProcessorThread")
+        threading.Thread.__init__(
+            self, name="zope.sendmail.queue.QueueProcessorThread")
         self.interval = interval
         self._lock = threading.Lock()
         self.setDaemon(True)
@@ -208,8 +210,9 @@ class QueueProcessorThread(threading.Thread):
             # comment above this class
 
             # find the age of the tmp file (if it exists)
-            mtime = self._action_if_exists(tmp_filename,
-                                           lambda fname: os.stat(fname)[stat.ST_MTIME])
+            mtime = self._action_if_exists(
+                tmp_filename,
+                lambda fname: os.stat(fname).st_mtime)
             age = time.time() - mtime if mtime is not None else None
 
             # if the tmp file exists, check its age
@@ -222,12 +225,13 @@ class QueueProcessorThread(threading.Thread):
                     try:
                         os.unlink(tmp_filename)
                     except OSError as e:
-                        if e.errno == errno.ENOENT: # file does not exist
+                        if e.errno == errno.ENOENT:  # file does not exist
                             # it looks like someone else removed the tmp
                             # file, that's fine, we'll try to deliver the
                             # message again later
                             return
-                        # XXX: we're silently ignoring the exception here. Is that right?
+                        # XXX: we're silently ignoring the exception here.
+                        # Is that right?
                         # If permissions or something are not right, we'll fail
                         # on _os_link later on.
                     # if we get here, the file existed, but was too
@@ -247,7 +251,7 @@ class QueueProcessorThread(threading.Thread):
             try:
                 os.utime(filename, None)
             except OSError as e:
-                if e.errno == errno.ENOENT: # file does not exist
+                if e.errno == errno.ENOENT:  # file does not exist
                     # someone removed the message before we could
                     # touch it, no need to complain, we'll just keep
                     # going
@@ -257,15 +261,14 @@ class QueueProcessorThread(threading.Thread):
             # creating this hard link will fail if another process is
             # also sending this message
             try:
-                #os.link(filename, tmp_filename)
                 _os_link(filename, tmp_filename)
             except OSError as e:
-                if e.errno == errno.EEXIST: # file exists, *nix
+                if e.errno == errno.EEXIST:  # file exists, *nix
                     # it looks like someone else is sending this
                     # message too; we'll try again later
                     return
                 # XXX: Silently ignoring all other errno
-            except Exception as e: # pragma: no cover
+            except Exception as e:  # pragma: no cover
                 if e[0] == 183 and e[1] == 'CreateHardLink':
                     # file exists, win32
                     return
@@ -299,7 +302,6 @@ class QueueProcessorThread(threading.Thread):
                             "Discarding email from %s to %s due to"
                             " a permanent error: %s",
                             fromaddr, ", ".join(toaddrs), str(e))
-                        #os.link(filename, rejected_filename)
                         _os_link(filename, rejected_filename)
                     else:
                         # Log an error and retry later
@@ -320,7 +322,7 @@ class QueueProcessorThread(threading.Thread):
                           fromaddr, ", ".join(toaddrs))
             # Blanket except because we don't want
             # this thread to ever die
-        except:
+        except Exception:
             if fromaddr != '' or toaddrs != ():
                 self.log.error(
                     "Error while sending mail from %s to %s.",
@@ -329,7 +331,6 @@ class QueueProcessorThread(threading.Thread):
                 self.log.error(
                     "Error while sending mail : %s ",
                     filename, exc_info=True)
-
 
     def stop(self):
         self._stopped = True
@@ -364,55 +365,67 @@ class ConsoleApp(object):
     ]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--daemon', action='store_true',
-                        help=("Run in daemon mode, periodically checking queue "
-                              "and sending messages.  Default is to send all "
-                              "messages in queue once and exit."))
-    parser.add_argument('--interval', metavar='<#secs>', type=float, default=3,
-                        help=("How often to check queue when in daemon mode. "
-                              "Default is %(default)s seconds."))
-    smtp_group = parser.add_argument_group("SMTP Server",
-                                           "Connection information for the SMTP server")
-    smtp_group.add_argument('--hostname', default='localhost',
-                            help=("Name of SMTP host to use for delivery.  Default is "
-                                  "%(default)s."))
-    smtp_group.add_argument('--port', type=int, default=25,
-                            help=("Which port on SMTP server to deliver mail to. "
-                                  "Default is %(default)s."))
+    parser.add_argument(
+        '--daemon', action='store_true',
+        help=("Run in daemon mode, periodically checking queue "
+              "and sending messages.  Default is to send all "
+              "messages in queue once and exit."))
+    parser.add_argument(
+        '--interval', metavar='<#secs>', type=float, default=3,
+        help=("How often to check queue when in daemon mode. "
+              "Default is %(default)s seconds."))
+    smtp_group = parser.add_argument_group(
+        "SMTP Server",
+        "Connection information for the SMTP server")
+    smtp_group.add_argument(
+        '--hostname', default='localhost',
+        help=("Name of SMTP host to use for delivery.  Default is "
+              "%(default)s."))
+    smtp_group.add_argument(
+        '--port', type=int, default=25,
+        help=("Which port on SMTP server to deliver mail to. "
+              "Default is %(default)s."))
 
-    auth_group = parser.add_argument_group("Authentication",
-                                           ("Authentication information for the SMTP server. "
-                                            "If one is provided, they must both be. One or both "
-                                            "can be provided in the --config file."))
-    auth_group.add_argument('--username',
-                            help=("Username to use to log in to SMTP server.  Default "
-                                  "is none."))
-    auth_group.add_argument('--password',
-                            help=("Password to use to log in to SMTP server.  Must be "
-                                  "specified if username is specified."))
+    auth_group = parser.add_argument_group(
+        "Authentication",
+        ("Authentication information for the SMTP server. "
+         "If one is provided, they must both be. One or both "
+         "can be provided in the --config file."))
+    auth_group.add_argument(
+        '--username',
+        help=("Username to use to log in to SMTP server.  Default "
+              "is none."))
+    auth_group.add_argument(
+        '--password',
+        help=("Password to use to log in to SMTP server.  Must be "
+              "specified if username is specified."))
     del auth_group
     tls_group = smtp_group.add_mutually_exclusive_group()
-    tls_group.add_argument('--force-tls', action='store_true',
-                           help=("Do not connect if TLS is not available.  Not "
-                                 "enabled by default."))
-    tls_group.add_argument('--no-tls', action='store_true',
-                           help=("Do not use TLS even if is available.  Not enabled "
-                                 "by default."))
+    tls_group.add_argument(
+        '--force-tls', action='store_true',
+        help=("Do not connect if TLS is not available.  Not "
+              "enabled by default."))
+    tls_group.add_argument(
+        '--no-tls', action='store_true',
+        help=("Do not use TLS even if is available.  Not enabled "
+              "by default."))
     del tls_group
     del smtp_group
-    parser.add_argument('--config', metavar='<inifile>',
-                        type=argparse.FileType(),
-                        help=("Get configuration from specified ini file; it must "
-                              "contain a section [%s] that can contain the "
-                              "following keys: %s. If you specify the queue path "
-                              "in the ini file, you don't need to specify it on "
-                              "the command line. With the exception of the queue path, "
-                              "options specified in the ini file override options on the "
-                              "command line." % (INI_SECTION, ', '.join(INI_NAMES))))
-    parser.add_argument("maildir", default=None, nargs="?",
-                        help=("The path to the mail queue directory."
-                              "If not given, it must be found in the --config file."
-                              "If given, this overrides a value in the --config file"))
+    parser.add_argument(
+        '--config', metavar='<inifile>',
+        type=argparse.FileType(),
+        help=("Get configuration from specified ini file; it must "
+              "contain a section [%s] that can contain the "
+              "following keys: %s. If you specify the queue path "
+              "in the ini file, you don't need to specify it on "
+              "the command line. With the exception of the queue path, "
+              "options specified in the ini file override options on the "
+              "command line." % (INI_SECTION, ', '.join(INI_NAMES))))
+    parser.add_argument(
+        "maildir", default=None, nargs="?",
+        help=("The path to the mail queue directory."
+              "If not given, it must be found in the --config file."
+              "If given, this overrides a value in the --config file"))
 
     daemon = False
     interval = 3
@@ -432,8 +445,9 @@ class ConsoleApp(object):
         self.script_name = argv[0]
         self.verbose = verbose
         self._process_args(argv[1:])
-        self.mailer = self.MailerKind(self.hostname, self.port, self.username,
-                                      self.password, self.no_tls, self.force_tls)
+        self.mailer = self.MailerKind(
+            self.hostname, self.port, self.username, self.password,
+            self.no_tls, self.force_tls)
 
     def main(self):
         queue = self.QueueProcessorKind(self.interval)
@@ -478,6 +492,7 @@ class ConsoleApp(object):
         self.force_tls = boolean(config.get(section, "force_tls"))
         self.no_tls = boolean(config.get(section, "no_tls"))
         self.queue_path = string_or_none(config.get(section, "queue_path"))
+
 
 def run(argv=None):
     logging.basicConfig()

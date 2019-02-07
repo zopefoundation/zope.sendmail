@@ -12,6 +12,10 @@ matrix:
         - python: "3.7"
           dist: xenial
           sudo: true
+        - name: "flake8"
+          install: pip install flake8
+          script: flake8 src setup.py
+          after_success:
 install:
     - pip install -U pip setuptools
     - pip install -U coverage coveralls coverage-python-version

@@ -30,15 +30,17 @@ from zope.sendmail.queue import QueueProcessorThread
 try:
     from zope.component.security import proxify
     from zope.security.zcml import Permission
-except ImportError: # pragma: no cover
+except ImportError:  # pragma: no cover
     SECURITY_SUPPORT = False
     Permission = TextLine
 
     def _assertPermission(permission, interfaces, component):
-        raise ConfigurationError("security proxied components are not "
-                                 "supported because zope.security is not available")
+        raise ConfigurationError(
+            "security proxied components are not "
+            "supported because zope.security is not available")
 else:
     SECURITY_SUPPORT = True
+
     def _assertPermission(permission, interfaces, component):
         return proxify(component, provides=interfaces, permission=permission)
 
@@ -49,7 +51,7 @@ class IDeliveryDirective(Interface):
 
     name = TextLine(
         title=u"Name",
-        description=u'Specifies the Delivery name of the mail utility. '\
+        description=u'Specifies the Delivery name of the mail utility. '
                     u'The default is "Mail".',
         default=u"Mail",
         required=False)
@@ -81,6 +83,7 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
         required=False,
         default=True)
 
+
 def _get_mailer(mailer):
     try:
         return getUtility(IMailer, mailer)
@@ -111,9 +114,11 @@ def queuedDelivery(_context, queuePath, mailer, permission=None, name="Mail",
         callable=createQueuedDelivery,
         args=())
 
+
 class IDirectDeliveryDirective(IDeliveryDirective):
     """This directive creates and registers a global direct mail utility. It
     should be only called once during startup."""
+
 
 def directDelivery(_context, mailer, permission=None, name="Mail"):
 
@@ -130,6 +135,7 @@ def directDelivery(_context, mailer, permission=None, name="Mail"):
         discriminator=('utility', IMailDelivery, name),
         callable=createDirectDelivery,
         args=())
+
 
 class IMailerDirective(Interface):
     """A generic directive registering a mailer for the mail utility."""
@@ -164,6 +170,7 @@ class ISMTPMailerDirective(IMailerDirective):
         title=u"Password",
         description=u"A password for SMTP AUTH.",
         required=False)
+
 
 def smtpMailer(_context, name, hostname="localhost", port="25",
                username=None, password=None):

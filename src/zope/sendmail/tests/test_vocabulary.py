@@ -13,11 +13,14 @@
 ##############################################################################
 """Mail delivery names vocabulary test
 """
+
+import doctest
 import unittest
+
 from zope.component.testing import PlacelessSetup
 
-class MailDeliveryNamesTests(PlacelessSetup,
-                             unittest.TestCase):
+
+class MailDeliveryNamesTests(PlacelessSetup, unittest.TestCase):
 
     _marker = object()
 
@@ -47,5 +50,9 @@ class MailDeliveryNamesTests(PlacelessSetup,
         names = sorted([term.value for term in vocab])
         self.assertEqual(names, sorted(NAMES))
 
+
 def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)
+    return unittest.TestSuite([
+        unittest.defaultTestLoader.loadTestsFromName(__name__),
+        doctest.DocTestSuite('zope.sendmail.vocabulary'),
+    ])

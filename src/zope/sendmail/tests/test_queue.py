@@ -42,6 +42,7 @@ class QPTesting(queue.QueueProcessorThread):
     def _makeMaildir(self, path):
         return WritableMaildirStub(self.test, path)
 
+
 class SMTPRecipientsRefusedMailerStub(object):
 
     def __init__(self, recipients):
@@ -51,6 +52,7 @@ class SMTPRecipientsRefusedMailerStub(object):
         import smtplib
         raise smtplib.SMTPRecipientsRefused(self.recipients)
 
+
 @contextmanager
 def patched(module, attr, func):
     orig = getattr(module, attr)
@@ -59,6 +61,7 @@ def patched(module, attr, func):
         yield
     finally:
         setattr(module, attr, orig)
+
 
 class TestQueueProcessorThread(unittest.TestCase):
 
@@ -76,10 +79,12 @@ class TestQueueProcessorThread(unittest.TestCase):
     def _assertEmptyErrorLog(self):
         self.assertEqual(self.thread.log.errors, [])
 
-    def _assertErrorLog(self,
-                        From=WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[0],
-                        to=", ".join(WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[1]),
-                        exception_kind=None):
+    def _assertErrorLog(
+        self,
+        From=WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[0],
+        to=", ".join(WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[1]),
+        exception_kind=None,
+    ):
         expected = ('Error while sending mail from %s to %s.',
                     (From, to,),
                     {'exc_info': True},)
@@ -104,8 +109,9 @@ class TestQueueProcessorThread(unittest.TestCase):
 
     def _assertTmpMessagePathDoesNotExist(self, filename="message"):
         full_path = self.md.stub_getTmpFilename(filename)
-        self.assertFalse(os.path.exists(full_path),
-                         "The temporary path '%s' should not exist" % full_path)
+        self.assertFalse(
+            os.path.exists(full_path),
+            "The temporary path '%s' should not exist" % full_path)
 
     def _assertTmpMessagePathExists(self, filename="message"):
         full_path = self.md.stub_getTmpFilename(filename)
@@ -128,7 +134,8 @@ class TestQueueProcessorThread(unittest.TestCase):
                          "The path '%s' should not exist" % full_path)
 
     def test_makeMaildir_creates(self):
-        md = queue.QueueProcessorThread()._makeMaildir(os.path.join(self.dir, 'testing'))
+        md = queue.QueueProcessorThread()._makeMaildir(
+            os.path.join(self.dir, 'testing'))
         self.assertTrue(os.path.exists(md.path))
 
     def test_threadName(self):
@@ -220,8 +227,10 @@ class TestQueueProcessorThread(unittest.TestCase):
 
     def test_stop_while_running(self):
         test = self
+
         class Maildir(object):
             count = 0
+
             def __iter__(self):
                 return self
 
@@ -232,7 +241,7 @@ class TestQueueProcessorThread(unittest.TestCase):
                     return
                 raise AssertionError("Should have stopped")
 
-            next = __next__ # Python 2
+            next = __next__  # Python 2
 
         self.thread.setMaildir(Maildir())
         self.thread.run()
@@ -254,6 +263,7 @@ class TestQueueProcessorThread(unittest.TestCase):
         tmp_file = self.md.stub_createTmpFile()
 
         err = OSError(tmp_file)
+
         def stat(fname):
             # Note that this interferes with debuggers
             self.assertEqual(fname, tmp_file)
@@ -268,7 +278,6 @@ class TestQueueProcessorThread(unittest.TestCase):
 
         # And we logged the random error
         self._assertGenericErrorLog(exception=err)
-
 
     def test_tmpfile_too_old(self):
         self.md.stub_createFile()
@@ -339,9 +348,9 @@ class TestQueueProcessorThread(unittest.TestCase):
         self._assertMessagePathExists()
         self._assertEmptyErrorLog()
 
-
     def test_run_forever(self):
         import time
+
         class DoneSleeping(Exception):
             pass
 
@@ -354,8 +363,6 @@ class TestQueueProcessorThread(unittest.TestCase):
                 self.thread.run()
 
 
-
-
 test_ini = """[app:zope-sendmail]
 interval = 33
 hostname = testhost
@@ -366,6 +373,7 @@ force_tls = False
 no_tls = True
 queue_path = hammer/dont/hurt/em
 """
+
 
 class TestConsoleApp(unittest.TestCase):
     def setUp(self):
@@ -386,7 +394,7 @@ class TestConsoleApp(unittest.TestCase):
     def _make_one(self, cmdline):
         cmdline = cmdline.split() if isinstance(cmdline, str) else cmdline
         with patched(sys, 'stdout', self.stdout), \
-             patched(sys, 'stderr', self.stderr):
+                patched(sys, 'stderr', self.stderr):
             return ConsoleApp(cmdline, verbose=False)
 
     def _get_output(self):
@@ -418,9 +426,11 @@ class TestConsoleApp(unittest.TestCase):
 
     def test_args_processing_almost_all_options(self):
         # use (almost) all of the options
-        cmdline = "zope-sendmail --daemon --interval 7 --hostname foo --port 75 " \
-            "--username chris --password rossi --force-tls " \
+        cmdline = (
+            "zope-sendmail --daemon --interval 7 --hostname foo --port 75 "
+            "--username chris --password rossi --force-tls "
             "%s" % self.dir
+        )
         app = self._make_one(cmdline)
         self.assertEqual("zope-sendmail", app.script_name)
         self.assertEqual(self.dir, app.queue_path)
@@ -447,8 +457,8 @@ class TestConsoleApp(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self._make_one(cmdline)
 
-        self.assertIn('Must use username and password together', self._get_output())
-
+        self.assertIn('Must use username and password together',
+                      self._get_output())
 
     def test_args_processing_force_tls_and_no_tls(self):
         # test force_tls and no_tls
@@ -457,7 +467,8 @@ class TestConsoleApp(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self._make_one(cmdline)
 
-        self.assertIn('--no-tls: not allowed with argument', self._get_output())
+        self.assertIn('--no-tls: not allowed with argument',
+                      self._get_output())
 
     def test_ini_parse(self):
         ini_path = os.path.join(self.dir, "zope-sendmail.ini")
@@ -504,8 +515,8 @@ class TestConsoleApp(unittest.TestCase):
         cmdline = ['sendmail', self.dir]
 
         with patched(QPTesting, 'test', self), \
-             patched(ConsoleApp, 'QueueProcessorKind', QPTesting), \
-             patched(ConsoleApp, 'MailerKind', MailerStub):
+                patched(ConsoleApp, 'QueueProcessorKind', QPTesting), \
+                patched(ConsoleApp, 'MailerKind', MailerStub):
             queue.run(cmdline)
 
     def test_help(self):
@@ -516,6 +527,3 @@ class TestConsoleApp(unittest.TestCase):
 
         self.assertIn('usage', self._get_output())
         self.assertEqual(exc.exception.code, 0)
-
-def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

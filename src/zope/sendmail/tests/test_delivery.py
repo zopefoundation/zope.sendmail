@@ -31,6 +31,7 @@ from zope.sendmail.interfaces import IDirectMailDelivery
 from zope.sendmail.delivery import AbstractMailDelivery
 from zope.sendmail.delivery import DirectMailDelivery
 
+
 @implementer(IMailer)
 class MailerStub(object):
 
@@ -54,13 +55,14 @@ class TestMailDataManager(unittest.TestCase):
         self.assertEqual(manager.callable, object)
         self.assertEqual(manager.args, (1, 2))
         # required by IDataManager
-        self.assertTrue(isinstance(manager.sortKey(), str))
+        self.assertIsInstance(manager.sortKey(), str)
 
     def test_successful_commit(self):
         # Regression test for http://www.zope.org/Collectors/Zope3-dev/590
         from zope.sendmail.delivery import MailDataManager
 
         _success = []
+
         def _on_success(*args):
             _success.append(args)
 
@@ -75,7 +77,6 @@ class TestMailDataManager(unittest.TestCase):
         manager.tpc_vote(xact)
         manager.tpc_finish(xact)
         self.assertEqual(_success, [('foo', 'bar')])
-
 
     def test_unsuccessful_commit(self):
         # Regression test for http://www.zope.org/Collectors/Zope3-dev/590
@@ -101,6 +102,11 @@ class TestMailDataManager(unittest.TestCase):
 
 class TestAbstractMailDelivery(unittest.TestCase):
 
+    # Avoid DeprecationWarning for assertRaisesRegexp on Python 3 while
+    # coping with Python 2 not having the Regex spelling variant
+    assertRaisesRegex = getattr(unittest.TestCase, 'assertRaisesRegex',
+                                unittest.TestCase.assertRaisesRegexp)
+
     def test_bad_message_id(self):
         class Parser(object):
             def parsestr(self, s):
@@ -112,8 +118,8 @@ class TestAbstractMailDelivery(unittest.TestCase):
         email.parser.Parser = Parser
 
         delivery = AbstractMailDelivery()
-        with self.assertRaisesRegexp(ValueError,
-                                     "Malformed Message-Id header"):
+        with self.assertRaisesRegex(ValueError,
+                                    "Malformed Message-Id header"):
             delivery.send(None, None, None)
 
 
@@ -148,7 +154,7 @@ class TestDirectMailDelivery(unittest.TestCase):
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
-        self.assertTrue('@' in msgid)
+        self.assertIn('@', msgid)
         self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
         self.assertEqual(len(mailer.sent_messages), 1)
@@ -156,7 +162,7 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(mailer.sent_messages[0][1], toaddrs)
         self.assertTrue(mailer.sent_messages[0][2].endswith(message))
         new_headers = mailer.sent_messages[0][2][:-len(message)]
-        self.assertTrue(new_headers.find('Message-Id: <%s>' % msgid) != -1)
+        self.assertIn('Message-Id: <%s>' % msgid, new_headers)
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
@@ -226,7 +232,6 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertIn("does not provide a vote method", str(w[0]))
 
 
-
 class MaildirWriterStub(object):
 
     data = ''
@@ -278,6 +283,7 @@ class MaildirStub(object):
         self.msgs.append(m)
         return m
 
+
 class WritableMaildirStub(MaildirStub):
 
     STUB_DEFAULT_MESSAGE_LINES = (
@@ -299,7 +305,8 @@ class WritableMaildirStub(MaildirStub):
         self.stub_directory = tempfile.mkdtemp(suffix=".test_maildir")
         test.addCleanup(shutil.rmtree, self.stub_directory)
 
-    def stub_createFile(self, filename="message", lines=STUB_DEFAULT_MESSAGE_LINES):
+    def stub_createFile(self, filename="message",
+                        lines=STUB_DEFAULT_MESSAGE_LINES):
         """
         Create a new file in the temporary directory.
 
@@ -387,6 +394,7 @@ class RefusingMailerStub(object):
 
     abort = None
 
+
 @implementer(IMailer)
 class SMTPResponseExceptionMailerStub(object):
 
@@ -444,16 +452,18 @@ class TestQueuedMailDelivery(unittest.TestCase):
 
         MaildirWriterStub.commited_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
-        self.assertTrue('@' in msgid)
+        self.assertIn('@', msgid)
         self.assertEqual(MaildirWriterStub.commited_messages, [])
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
         transaction.commit()
         self.assertEqual(len(MaildirWriterStub.commited_messages), 1)
-        self.assertTrue(MaildirWriterStub.commited_messages[0].endswith(message))
+        self.assertTrue(
+            MaildirWriterStub.commited_messages[0].endswith(message)
+        )
         new_headers = MaildirWriterStub.commited_messages[0][:-len(message)]
-        self.assertTrue(new_headers.find('Message-Id: <%s>' % msgid) != -1)
-        self.assertTrue(new_headers.find('X-Zope-From: %s' % fromaddr) != 1)
-        self.assertTrue(new_headers.find('X-Zope-To: %s' % ", ".join(toaddrs)) != 1)
+        self.assertIn('Message-Id: <%s>' % msgid, new_headers)
+        self.assertIn('X-Zope-From: %s' % fromaddr, new_headers)
+        self.assertIn('X-Zope-To: %s' % ", ".join(toaddrs), new_headers)
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []
@@ -463,7 +473,3 @@ class TestQueuedMailDelivery(unittest.TestCase):
         transaction.abort()
         self.assertEqual(MaildirWriterStub.commited_messages, [])
         self.assertEqual(len(MaildirWriterStub.aborted_messages), 1)
-
-
-def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

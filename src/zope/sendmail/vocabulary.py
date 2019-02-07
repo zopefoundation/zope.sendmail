@@ -21,6 +21,7 @@ from zope.schema.interfaces import IVocabularyFactory
 from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
 from zope.sendmail.interfaces import IMailDelivery
 
+
 def MailDeliveryNames(context=None):
     """Vocabulary with names of mail delivery utilities
 
@@ -51,5 +52,6 @@ def MailDeliveryNames(context=None):
     utils = zope.component.getUtilitiesFor(IMailDelivery, context)
     terms = [SimpleTerm(name) for name, util in utils]
     return SimpleVocabulary(terms)
+
 
 directlyProvides(MailDeliveryNames, IVocabularyFactory)

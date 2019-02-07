@@ -34,9 +34,11 @@ import zope.sendmail.tests
 class MaildirStub(object):
     pass
 
+
 @implementer(IMailer)
 class Mailer(object):
     pass
+
 
 class MockQueueProcessorThread(object):
 
@@ -111,10 +113,3 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def test_zcml_without_registered_mailer(self):
         self._check_zcml_without_registration(self.testMailer, 'test.mailer')
-
-
-def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)
-
-if __name__ == '__main__':
-    unittest.main()

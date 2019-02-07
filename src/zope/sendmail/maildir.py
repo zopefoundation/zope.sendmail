@@ -25,6 +25,7 @@ from zope.sendmail.interfaces import \
      IMaildirFactory, IMaildir, IMaildirMessageWriter
 from zope.sendmail._compat import text_type
 
+
 @provider(IMaildirFactory)
 @implementer(IMaildir)
 class Maildir(object):
@@ -91,7 +92,8 @@ class Maildir(object):
                                       random.randrange(randmax))
             filename = join(subdir_tmp, unique)
             try:
-                fd = os.open(filename, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0o600)
+                fd = os.open(filename, os.O_CREAT | os.O_EXCL | os.O_WRONLY,
+                             0o600)
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
@@ -118,7 +120,6 @@ def _encode_utf8(s):
 @implementer(IMaildirMessageWriter)
 class MaildirMessageWriter(object):
     """See :class:`zope.sendmail.interfaces.IMaildirMessageWriter`"""
-
 
     def __init__(self, fd, filename, new_filename):
         self._filename = filename
