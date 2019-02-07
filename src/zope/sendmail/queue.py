@@ -39,7 +39,7 @@ else:
 
 try:
     import ConfigParser as configparser
-except ImportError:
+except ImportError:  # pragma: PY3
     import configparser
 
 # The longest time sending a file is expected to take.  Longer than this and
