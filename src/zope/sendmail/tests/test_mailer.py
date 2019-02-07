@@ -26,6 +26,7 @@ from zope.sendmail.mailer import SMTPMailer
 # This works for both, Python 2 and 3.
 port_types = (int, str)
 
+
 class SMTP(object):
 
     fail_on_quit = False
@@ -85,11 +86,15 @@ class TestSMTPMailer(unittest.TestCase):
 
     SMTPClass = SMTP
 
+    # Avoid DeprecationWarning for assertRaisesRegexp on Python 3 while
+    # coping with Python 2 not having the Regex spelling variant
+    assertRaisesRegex = getattr(unittest.TestCase, 'assertRaisesRegex',
+                                unittest.TestCase.assertRaisesRegexp)
+
     def _makeSMTP(self, h, p):
         self.smtp = self.SMTPClass(h, p)
         self.smtp_hook(self.smtp)
         return self.smtp
-
 
     def setUp(self, port=None):
         self.smtp = None
@@ -122,8 +127,10 @@ class TestSMTPMailer(unittest.TestCase):
         # The mailer re-opens itself as needed when sending
         # multiple mails.
         smtps = []
+
         def hook(smtp):
             smtps.append(smtp)
+
         self.smtp_hook = hook
         for run in (1, 2):
             fromaddr = 'me@example.com' + str(run)
@@ -138,15 +145,15 @@ class TestSMTPMailer(unittest.TestCase):
 
         self.assertEqual(2, len(smtps))
 
-
     def test_send_multiple_threads(self):
         import threading
 
         results = []
+
         def run():
             try:
                 self.test_send_multiple_same_mailer()
-            except BaseException as e: # pragma: no cover
+            except BaseException as e:  # pragma: no cover
                 results.append(e)
                 raise
             else:
@@ -186,8 +193,8 @@ class TestSMTPMailer(unittest.TestCase):
         fromaddr = 'me@example.com'
         toaddrs = ('you@example.com', 'him@example.com')
         msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-        self.mailer.username = u'f\u00f8\u00f8' # double o slash
-        self.mailer.password = u'\u00e9vil' # e acute
+        self.mailer.username = u'f\u00f8\u00f8'  # double o slash
+        self.mailer.password = u'\u00e9vil'  # e acute
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
@@ -198,8 +205,8 @@ class TestSMTPMailer(unittest.TestCase):
         fromaddr = 'me@example.com'
         toaddrs = ('you@example.com', 'him@example.com')
         msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-        self.mailer.username = b'f\xc3\xb8\xc3\xb8' # double o slash
-        self.mailer.password = b'\xc3\xa9vil' # e acute
+        self.mailer.username = b'f\xc3\xb8\xc3\xb8'  # double o slash
+        self.mailer.password = b'\xc3\xa9vil'  # e acute
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
@@ -220,7 +227,6 @@ class TestSMTPMailer(unittest.TestCase):
         self.assertTrue(not self.smtp.quitted)
         self.assertTrue(self.smtp.closed)
 
-
     def test_vote_bad_connection(self):
 
         def hook(smtp):
@@ -228,8 +234,8 @@ class TestSMTPMailer(unittest.TestCase):
             smtp.helo = lambda: (100, "Nope")
         self.smtp_hook = hook
 
-        with self.assertRaisesRegexp(RuntimeError,
-                                     "Error sending HELO to the SMTP server"):
+        with self.assertRaisesRegex(RuntimeError,
+                                    "Error sending HELO to the SMTP server"):
             self.mailer.vote(None, None, None)
 
     def test_abort_no_conn(self):
@@ -238,8 +244,10 @@ class TestSMTPMailer(unittest.TestCase):
     def test_abort_fails_call_close(self):
         class Conn(object):
             closed = False
+
             def quit(self):
                 raise SSLError()
+
             def close(self):
                 self.closed = True
 
@@ -258,20 +266,22 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.force_tls = True
         self.mailer.connection = Conn()
 
-        with self.assertRaisesRegexp(RuntimeError,
-                                     'TLS is not available'):
+        with self.assertRaisesRegex(RuntimeError,
+                                    'TLS is not available'):
             self.mailer.send(None, None, None)
 
     def test_send_no_esmtp_with_username(self):
         class Conn(object):
             does_esmtp = False
+
             def has_extn(self, *args):
                 return False
 
         self.mailer.connection = Conn()
         self.mailer.username = 'user'
-        with self.assertRaisesRegexp(RuntimeError,
-                                     "Mailhost does not support ESMTP but a username"):
+        with self.assertRaisesRegex(
+                RuntimeError,
+                "Mailhost does not support ESMTP but a username"):
             self.mailer.send(None, None, None)
 
 
@@ -280,10 +290,8 @@ class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
     SMTPClass = SMTPWithNoEHLO
 
     def test_send_auth(self):
-        self.skipTest("This test requires ESMTP, which we're intentionally not enabling")
+        self.skipTest(
+            "This test requires ESMTP, which we're intentionally not enabling")
 
     test_send_auth_unicode = test_send_auth
     test_send_auth_nonascii = test_send_auth
-
-def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

@@ -112,7 +112,7 @@ class IMailQueueProcessor(Interface):
     pollingInterval = Int(
         title=_(u"Polling Interval"),
         description=_(u"How often the queue is checked for new messages"
-                       " (in milliseconds)"),
+                      u" (in milliseconds)"),
         default=5000)
 
     mailer = Attribute("IMailer that is used for message delivery")
@@ -134,12 +134,12 @@ class IMailer(Interface):
 
         Messages are sent immediately.
         """
-    
+
     def abort():
         """Abort sending the message for asynchronous subclasses."""
-    
+
     def vote(fromaddr, toaddrs, message):
-        """Raise an exception if there is a known reason why the message 
+        """Raise an exception if there is a known reason why the message
         cannot be sent."""
 
 
@@ -253,4 +253,3 @@ class IMaildirMessageWriter(Interface):
 
         Calling ``abort()`` more than once is allowed.
         """
-

@@ -25,10 +25,12 @@ from zope.interface.verify import verifyObject
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.interfaces import IMaildirMessageWriter
 
+
 class FakeSocketModule(object):
 
     def gethostname(self):
         return 'myhostname'
+
 
 class FakeTimeModule(object):
 
@@ -39,6 +41,7 @@ class FakeTimeModule(object):
 
     def sleep(self, n):
         self._timer += n
+
 
 class FakeOsPathModule(object):
 
@@ -81,7 +84,7 @@ class FakeOsModule(object):
         '/path/to/maildir/tmp/1234500000.4242.myhostname.*': stat.S_IFREG,
         '/path/to/maildir/tmp/1234500001.4242.myhostname.*': stat.S_IFREG,
         '/path/to/regularfile': stat.S_IFREG,
-        '/path/to/emptydirectory': stat.S_IFDIR,
+        '/path/to/emptydir': stat.S_IFDIR,
     }
     _listdir = {
         '/path/to/maildir/new': ['1', '2', '.svn'],
@@ -129,10 +132,10 @@ class FakeOsModule(object):
 
     def open(self, filename, flags, mode=0o777):
         if (flags & os.O_EXCL and flags & os.O_CREAT
-            and self.access(filename, 0)):
+                and self.access(filename, 0)):
             raise OSError(errno.EEXIST, 'file already exists')
         if not flags & os.O_CREAT and not self.access(filename, 0):
-            raise OSError('file not found') # pragma: no cover
+            raise OSError('file not found')  # pragma: no cover
         fd = max(list(self._descriptors.keys()) + [2]) + 1
         self._descriptors[fd] = filename, flags, mode
         return fd
@@ -140,7 +143,7 @@ class FakeOsModule(object):
     def fdopen(self, fd, mode='r'):
         try:
             filename, flags, _permissions = self._descriptors[fd]
-        except KeyError: # pragma: no cover
+        except KeyError:  # pragma: no cover
             raise AssertionError('os.fdopen() called with an unknown'
                                  ' file descriptor')
         assert mode == 'w'
@@ -210,8 +213,8 @@ class TestMaildir(unittest.TestCase):
         self.assertRaises(ValueError, Maildir, '/path/to/regularfile', True)
 
         # Case 4: it is a directory, but not a maildir
-        self.assertRaises(ValueError, Maildir, '/path/to/emptydirectory', False)
-        self.assertRaises(ValueError, Maildir, '/path/to/emptydirectory', True)
+        self.assertRaises(ValueError, Maildir, '/path/to/emptydir', False)
+        self.assertRaises(ValueError, Maildir, '/path/to/emptydir', True)
 
     def test_iteration(self):
         m = Maildir('/path/to/maildir')
@@ -230,6 +233,7 @@ class TestMaildir(unittest.TestCase):
 
     def test_newMessage_error(self):
         m = Maildir('/path/to/maildir')
+
         def open(*args):
             raise OSError(errno.EADDRINUSE, "")
         self.fake_os_module.open = open
@@ -303,10 +307,3 @@ class TestMaildir(unittest.TestCase):
                          b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
         writer.close()
         self.assertTrue(writer._fd._closed)
-
-
-def test_suite():
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)
-
-if __name__ == '__main__':
-    unittest.main()

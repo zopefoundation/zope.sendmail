@@ -31,6 +31,7 @@ class _SMTPState(local):
     code = None
     response = None
 
+
 @implementer(ISMTPMailer)
 class SMTPMailer(object):
     """Implementation of :class:`zope.sendmail.interfaces.ISMTPMailer`."""
@@ -107,8 +108,8 @@ class SMTPMailer(object):
                     password = password.encode('utf-8')
                 connection.login(username, password)
         elif self.username:
-            raise RuntimeError('Mailhost does not support ESMTP but a username '
-                               'is configured')
+            raise RuntimeError(
+                'Mailhost does not support ESMTP but a username is configured')
 
         try:
             connection.sendmail(fromaddr, toaddrs, message)

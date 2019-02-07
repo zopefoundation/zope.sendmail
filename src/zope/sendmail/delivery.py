@@ -34,9 +34,11 @@ from zope.sendmail.maildir import Maildir
 
 # BBB: this import is needed for backward compatibility with older versions of
 # zope.sendmail which defined QueueProcessorThread in this module
-from zope.sendmail.queue import QueueProcessorThread
+from zope.sendmail.queue import QueueProcessorThread  # noqa: F401
+
 
 log = logging.getLogger("MailDataManager")
+
 
 @implementer(IDataManager)
 class MailDataManager(object):
@@ -80,7 +82,7 @@ class MailDataManager(object):
     def tpc_finish(self, txn):
         try:
             self.callable(*self.args)
-        except Exception as e:
+        except Exception:
             # Any exceptions here can cause database corruption.
             # Better to protect the data and potentially miss emails than
             # leave a database in an inconsistent state which requires a

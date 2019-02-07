@@ -28,7 +28,7 @@ TESTS_REQUIRE = [
 
 EXTRAS_REQUIRE = {
     'test': TESTS_REQUIRE,
-    #':sys_platform == "win32"': ['pywin32'],
+    # ':sys_platform == "win32"': ['pywin32'],
     # Because https://sourceforge.net/p/pywin32/bugs/680/
     ':sys_platform == "win32"': ['pypiwin32'],
     'docs': [
@@ -50,55 +50,56 @@ LONG_DESCRIPTION = (
     read('CHANGES.rst')
 )
 
-setup(name='zope.sendmail',
-      version='4.2.2.dev0',
-      url='https://github.com/zopefoundation/zope.sendmail',
-      license='ZPL 2.1',
-      description='Zope sendmail',
-      author='Zope Foundation and Contributors',
-      author_email='zope-dev@zope.org',
-      long_description=LONG_DESCRIPTION,
-      classifiers=[
-          'Development Status :: 5 - Production/Stable',
-          'Environment :: Web Environment',
-          'Intended Audience :: Developers',
-          'License :: OSI Approved :: Zope Public License',
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
-          'Programming Language :: Python :: 3',
-          'Programming Language :: Python :: 3.4',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'Programming Language :: Python :: Implementation :: CPython',
-          'Programming Language :: Python :: Implementation :: PyPy',
-          'Operating System :: OS Independent',
-          'Topic :: Internet :: WWW/HTTP',
-          'Topic :: Communications :: Email',
-          'Framework :: Zope :: 3',
-      ],
-      packages=find_packages('src'),
-      package_dir={'': 'src'},
-      namespace_packages=['zope'],
-      extras_require=EXTRAS_REQUIRE,
-      install_requires=[
-          'setuptools',
-          'transaction',
-          'zope.i18nmessageid',
-          'zope.interface',
-          'zope.schema',
-          # it's only needed for vocabulary, zcml and tests
-          'zope.component>=3.8.0',
-          # these are only needed for zcml
-          'zope.configuration',
-      ],
-      tests_require=TESTS_REQUIRE,
-      test_suite='zope.sendmail.tests',
-      include_package_data=True,
-      zip_safe=False,
-      entry_points="""
+setup(
+    name='zope.sendmail',
+    version='4.2.2.dev0',
+    url='https://github.com/zopefoundation/zope.sendmail',
+    license='ZPL 2.1',
+    description='Zope sendmail',
+    author='Zope Foundation and Contributors',
+    author_email='zope-dev@zope.org',
+    long_description=LONG_DESCRIPTION,
+    classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Environment :: Web Environment',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: Zope Public License',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
+        'Operating System :: OS Independent',
+        'Topic :: Internet :: WWW/HTTP',
+        'Topic :: Communications :: Email',
+        'Framework :: Zope :: 3',
+    ],
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
+    namespace_packages=['zope'],
+    extras_require=EXTRAS_REQUIRE,
+    install_requires=[
+        'setuptools',
+        'transaction',
+        'zope.i18nmessageid',
+        'zope.interface',
+        'zope.schema',
+        # it's only needed for vocabulary, zcml and tests
+        'zope.component>=3.8.0',
+        # these are only needed for zcml
+        'zope.configuration',
+    ],
+    tests_require=TESTS_REQUIRE,
+    test_suite='zope.sendmail.tests',
+    include_package_data=True,
+    zip_safe=False,
+    entry_points="""
       [console_scripts]
       zope-sendmail = zope.sendmail.queue:run
-      """
+    """
 )

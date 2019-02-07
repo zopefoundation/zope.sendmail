@@ -16,10 +16,11 @@
 
 import doctest
 import unittest
+
 from zope.component.testing import PlacelessSetup
 
-class MailDeliveryNamesTests(PlacelessSetup,
-                             unittest.TestCase):
+
+class MailDeliveryNamesTests(PlacelessSetup, unittest.TestCase):
 
     _marker = object()
 
