@@ -451,9 +451,9 @@ class TestQueuedMailDelivery(unittest.TestCase):
         self.assertEqual(len(MaildirWriterStub.commited_messages), 1)
         self.assertTrue(MaildirWriterStub.commited_messages[0].endswith(message))
         new_headers = MaildirWriterStub.commited_messages[0][:-len(message)]
-        self.assertTrue(new_headers.find('Message-Id: <%s>' % msgid) != -1)
-        self.assertTrue(new_headers.find('X-Zope-From: %s' % fromaddr) != 1)
-        self.assertTrue(new_headers.find('X-Zope-To: %s' % ", ".join(toaddrs)) != 1)
+        self.assertIn('Message-Id: <%s>' % msgid, new_headers)
+        self.assertIn('X-Zope-From: %s' % fromaddr, new_headers)
+        self.assertIn('X-Zope-To: %s' % ", ".join(toaddrs), new_headers)
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []
