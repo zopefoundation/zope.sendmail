@@ -171,8 +171,8 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertEqual(self.smtp.username, b'foo')
-        self.assertEqual(self.smtp.password, b'evil')
+        self.assertEqual(self.smtp.username, 'foo')
+        self.assertEqual(self.smtp.password, 'evil')
         self.assertEqual(self.smtp.hostname, 'spamrelay')
         self.assertEqual(self.smtp.port, '31337')
         self.assertEqual(self.smtp.fromaddr, fromaddr)
@@ -190,8 +190,8 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertEqual(self.smtp.username, b'f\xc3\xb8\xc3\xb8')
-        self.assertEqual(self.smtp.password, b'\xc3\xa9vil')
+        self.assertEqual(self.smtp.username, 'føø')
+        self.assertEqual(self.smtp.password, 'évil')
 
     def test_send_auth_nonascii(self):
         fromaddr = 'me@example.com'
