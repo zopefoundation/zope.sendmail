@@ -102,9 +102,9 @@ class SMTPMailer(object):
             if self.username is not None and self.password is not None:
                 username, password = self.username, self.password
                 if PY2 and isinstance(username, text_type):
-                    username = username.encode('utf-8')
+                    username = username.encode('utf-8')  # pragma: PY2
                 if PY2 and isinstance(password, text_type):
-                    password = password.encode('utf-8')
+                    password = password.encode('utf-8')  # pragma: PY2
                 connection.login(username, password)
         elif self.username:
             raise RuntimeError('Mailhost does not support ESMTP but a username '
