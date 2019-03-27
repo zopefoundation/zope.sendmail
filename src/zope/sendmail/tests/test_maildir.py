@@ -24,6 +24,7 @@ from zope.interface.verify import verifyObject
 
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.interfaces import IMaildirMessageWriter
+from zope.sendmail._compat import PY2
 
 
 class FakeSocketModule(object):
@@ -157,7 +158,7 @@ class FakeFile(object):
     def __init__(self, filename, mode):
         self._filename = filename
         self._mode = mode
-        self._written = b''
+        self._written = ''
         self._closed = False
 
     def close(self):
@@ -167,7 +168,7 @@ class FakeFile(object):
         self._written += data
 
     def writelines(self, lines):
-        self._written += b''.join(lines)
+        self._written += ''.join(lines)
 
 
 class TestMaildir(unittest.TestCase):
@@ -259,7 +260,7 @@ class TestMaildir(unittest.TestCase):
         print('fee', end='', file=writer)
         writer.write(' fie')
         writer.writelines([' foe', ' foo'])
-        self.assertEqual(writer._fd._written, b'fee fie foe foo')
+        self.assertEqual(writer._fd._written, 'fee fie foe foo')
 
         writer.abort()
         self.assertTrue(writer._fd._closed)
@@ -303,7 +304,11 @@ class TestMaildir(unittest.TestCase):
         print(u'fe\xe8', end='', file=writer)
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
-        self.assertEqual(writer._fd._written,
-                         b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+        if PY2:
+            self.assertEqual(writer._fd._written,
+                             'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+        else:
+            self.assertEqual(writer._fd._written,
+                             'fe\xe8 fi\xe8 fo\xe8 fo\xf2')
         writer.close()
         self.assertTrue(writer._fd._closed)
