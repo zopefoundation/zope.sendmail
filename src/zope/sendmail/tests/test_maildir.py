@@ -305,8 +305,9 @@ class TestMaildir(unittest.TestCase):
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
         if PY2:
-            self.assertEqual(writer._fd._written,
-                             'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
+            self.assertEqual(
+                writer._fd._written,
+                'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')  # pragma: PY2
         else:
             self.assertEqual(writer._fd._written,
                              'fe\xe8 fi\xe8 fo\xe8 fo\xf2')

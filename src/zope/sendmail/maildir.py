@@ -114,7 +114,7 @@ class Maildir(object):
 
 def _encode_utf8(s):
     if PY2 and isinstance(s, text_type):
-        s = s.encode('utf-8')
+        s = s.encode('utf-8')  # pragma: PY2
     return s
 
 
