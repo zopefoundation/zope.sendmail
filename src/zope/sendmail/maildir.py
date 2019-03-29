@@ -107,7 +107,7 @@ class Maildir(object):
                 time.sleep(0.1)
             else:
                 break
-        return MaildirMessageWriter(os.fdopen(fd, 'w'), filename,
+        return MaildirMessageWriter(os.fdopen(fd, 'wb'), filename,
                                     join(subdir_new, unique))
 
 

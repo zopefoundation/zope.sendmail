@@ -146,7 +146,7 @@ class FakeOsModule(object):
         except KeyError:  # pragma: no cover
             raise AssertionError('os.fdopen() called with an unknown'
                                  ' file descriptor')
-        assert mode == 'w'
+        assert mode == 'wb'
         assert flags & os.O_WRONLY
         assert not flags & os.O_RDWR
         return FakeFile(filename, mode)
