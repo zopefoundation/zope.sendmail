@@ -157,7 +157,7 @@ class FakeFile(object):
     def __init__(self, filename, mode):
         self._filename = filename
         self._mode = mode
-        self._written = b''
+        self._written = b'' if 'b' in mode else ''
         self._closed = False
 
     def close(self):
@@ -252,10 +252,10 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import MaildirMessageWriter
         filename1 = '/path/to/maildir/tmp/1234500002.4242.myhostname'
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
-        fd = FakeFile(filename1, 'w')
+        fd = FakeFile(filename1, 'wb')
         writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEqual(writer._fd._filename, filename1)
-        self.assertEqual(writer._fd._mode, 'w')  # TODO or 'wb'?
+        self.assertEqual(writer._fd._mode, 'wb')
         print('fee', end='', file=writer)
         writer.write(' fie')
         writer.writelines([' foe', ' foo'])
@@ -296,10 +296,10 @@ class TestMaildir(unittest.TestCase):
         from zope.sendmail.maildir import MaildirMessageWriter
         filename1 = '/path/to/maildir/tmp/1234500002.4242.myhostname'
         filename2 = '/path/to/maildir/new/1234500002.4242.myhostname'
-        fd = FakeFile(filename1, 'w')
+        fd = FakeFile(filename1, 'wb')
         writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEqual(writer._fd._filename, filename1)
-        self.assertEqual(writer._fd._mode, 'w')  # TODO or 'wb'?
+        self.assertEqual(writer._fd._mode, 'wb')
         print(u'fe\xe8', end='', file=writer)
         writer.write(u' fi\xe8')
         writer.writelines([u' fo\xe8', u' fo\xf2'])
