@@ -2,8 +2,12 @@
  Changes
 =========
 
-4.2.2 (unreleased)
-==================
+5.0 (unreleased)
+================
+
+- Drop support for Python 3.4.
+
+- Add support for Python 3.8a3.
 
 - Fix text/bytes issue in MailDir for Python 3.
   (`#24 <https://github.com/zopefoundation/zope.sendmail/pull/24>`_)
