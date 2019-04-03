@@ -6,6 +6,7 @@
 ==================
 
 - Fix text/bytes issue in MailDir for Python 3.
+  (`#24 <https://github.com/zopefoundation/zope.sendmail/pull/24>`_)
 
 
 4.2.1 (2019-02-07)
