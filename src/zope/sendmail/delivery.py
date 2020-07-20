@@ -113,9 +113,9 @@ class AbstractMailDelivery(object):
             header = message.split(b'\n\n')[0]
 
         if bytes is str:
-            parse = email.parser.Parser().parsestr
+            parse = email.parser.Parser().parsestr  # pragma: PY2
         else:
-            parse = email.parser.BytesParser().parsebytes
+            parse = email.parser.BytesParser().parsebytes  # pragma: PY3
         messageid = parse(header).get('Message-Id')
         if messageid:
             if not messageid.startswith('<') or not messageid.endswith('>'):
