@@ -149,11 +149,6 @@ class QueueProcessorThread(threading.Thread):
         toaddrs = ()
         rest = ""
 
-        # The most common use case is to use UTF-8 encoding. If something else
-        # is needed, pass bytes
-        if not isinstance(message, bytes):
-            message = message.encode('utf-8')
-
         try:
             first, second, rest = message.split(b'\n', 2)
         except ValueError:

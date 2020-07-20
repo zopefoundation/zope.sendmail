@@ -131,7 +131,7 @@ class TestDirectMailDelivery(unittest.TestCase):
         verifyObject(IDirectMailDelivery, delivery)
         self.assertEqual(delivery.mailer, mailer)
 
-    def testSend(self):
+    def testSend(self, send_unicode=False):
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
@@ -145,12 +145,22 @@ class TestDirectMailDelivery(unittest.TestCase):
                    b'\n'
                    b'This is just an example\n')
 
+        if send_unicode:
+            opt_headers_bytes = opt_headers
+            opt_headers = opt_headers.decode('utf-8')
+            message_bytes = message + b'\xc3\xa4'
+            message = message_bytes.decode('utf-8')
+        else:
+            message_bytes = message
+            opt_headers_bytes = opt_headers
+
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(msgid, '20030519.1234@example.org')
         self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
         self.assertEqual(mailer.sent_messages,
-                         [(fromaddr, toaddrs, opt_headers + message)])
+                         [(fromaddr, toaddrs,
+                           opt_headers_bytes + message_bytes)])
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
@@ -160,8 +170,8 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(len(mailer.sent_messages), 1)
         self.assertEqual(mailer.sent_messages[0][0], fromaddr)
         self.assertEqual(mailer.sent_messages[0][1], toaddrs)
-        self.assertTrue(mailer.sent_messages[0][2].endswith(message))
-        new_headers = mailer.sent_messages[0][2][:-len(message)]
+        self.assertTrue(mailer.sent_messages[0][2].endswith(message_bytes))
+        new_headers = mailer.sent_messages[0][2][:-len(message_bytes)]
         self.assertIn(('Message-Id: <%s>' % msgid).encode(), new_headers)
 
         mailer.sent_messages = []
@@ -169,6 +179,9 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(mailer.sent_messages, [])
         transaction.abort()
         self.assertEqual(mailer.sent_messages, [])
+
+    def testSendUnicode(self):
+        self.testSend(send_unicode=True)
 
     def testBrokenMailerErrorsAreEaten(self):
         from zope.testing.loggingsupport import InstalledHandler
