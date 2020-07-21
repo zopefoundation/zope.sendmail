@@ -110,7 +110,11 @@ class AbstractMailDelivery(object):
         else:
             if not isinstance(message, bytes):
                 message = message.encode('utf-8')
-            header = message.split(b'\n\n')[0]
+            # determine line separator type (assumes consistency)
+            nli = message.find(b'\n')
+            line_sep = b'\n' if nli < 1 or message[nli - 1] != b'\r' \
+                 else b'\r\n'
+            header = message.split(line_sep * 2, 1)[0]
 
         if bytes is str:
             parse = email.parser.Parser().parsestr  # pragma: PY2
