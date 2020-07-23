@@ -35,6 +35,7 @@ from zope.sendmail.maildir import Maildir
 # BBB: this import is needed for backward compatibility with older versions of
 # zope.sendmail which defined QueueProcessorThread in this module
 from zope.sendmail.queue import QueueProcessorThread  # noqa: F401
+from ._compat import PY2
 
 
 log = logging.getLogger("MailDataManager")
@@ -116,7 +117,7 @@ class AbstractMailDelivery(object):
                 else b'\r\n'
             header = message.split(line_sep * 2, 1)[0]
 
-        if bytes is str:
+        if PY2:
             parse = email.parser.Parser().parsestr  # pragma: PY2
         else:
             parse = email.parser.BytesParser().parsebytes  # pragma: PY3
