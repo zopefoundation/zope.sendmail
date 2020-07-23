@@ -131,7 +131,7 @@ class TestDirectMailDelivery(unittest.TestCase):
         verifyObject(IDirectMailDelivery, delivery)
         self.assertEqual(delivery.mailer, mailer)
 
-    def testSend(self, send_unicode=False):
+    def testSend(self, send_unicode=False, message=None):
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
@@ -141,9 +141,10 @@ class TestDirectMailDelivery(unittest.TestCase):
                        b'To: some-zope-coders:;\n'
                        b'Date: Mon, 19 May 2003 10:17:36 -0400\n'
                        b'Message-Id: <20030519.1234@example.org>\n')
-        message = (b'Subject: example\n'
-                   b'\n'
-                   b'This is just an example\n')
+        if message is None:
+            message = (b'Subject: example\n'
+                       b'\n'
+                       b'This is just an example\n')
 
         if send_unicode:
             opt_headers_bytes = opt_headers
@@ -182,6 +183,17 @@ class TestDirectMailDelivery(unittest.TestCase):
 
     def testSendUnicode(self):
         self.testSend(send_unicode=True)
+
+    def testSendLatin1(self):
+        '''
+        Test to send a mail that is not valid UTF-8. Since we are using bytes
+        everywhere, this is not a problem.
+        '''
+        message = (b'Subject: example\n'
+                   b'Content-Type: text/plain; charset="latin1"\n'
+                   b'\n'
+                   b'\xfc')
+        self.testSend(message=message)
 
     def testBrokenMailerErrorsAreEaten(self):
         from zope.testing.loggingsupport import InstalledHandler
