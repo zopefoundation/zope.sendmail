@@ -143,18 +143,18 @@ class TestQueueProcessorThread(unittest.TestCase):
                          "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
-        hdr = ('X-Zope-From: foo@example.com\n'
-               'X-Zope-To: bar@example.com, baz@example.com\n')
-        msg = ('Header: value\n'
-               '\n'
-               'Body\n')
+        hdr = (b'X-Zope-From: foo@example.com\n'
+               b'X-Zope-To: bar@example.com, baz@example.com\n')
+        msg = (b'Header: value\n'
+               b'\n'
+               b'Body\n')
         f, t, m = self.thread._parseMessage(hdr + msg)
         self.assertEqual(f, 'foo@example.com')
         self.assertEqual(t, ('bar@example.com', 'baz@example.com'))
         self.assertEqual(m, msg)
 
     def test_parseMessage_error(self):
-        msg = "bad message"
+        msg = b"bad message"
         f, t, m = self.thread._parseMessage(msg)
         self.assertEqual(f, "")
         self.assertEqual(t, ())

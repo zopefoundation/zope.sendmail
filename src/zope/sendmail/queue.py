@@ -150,17 +150,17 @@ class QueueProcessorThread(threading.Thread):
         rest = ""
 
         try:
-            first, second, rest = message.split('\n', 2)
+            first, second, rest = message.split(b'\n', 2)
         except ValueError:
             return fromaddr, toaddrs, message
 
-        if first.startswith("X-Zope-From: "):
-            i = len("X-Zope-From: ")
-            fromaddr = first[i:]
+        if first.startswith(b"X-Zope-From: "):
+            i = len(b"X-Zope-From: ")
+            fromaddr = first[i:].decode()
 
-        if second.startswith("X-Zope-To: "):
-            i = len("X-Zope-To: ")
-            toaddrs = tuple(second[i:].split(", "))
+        if second.startswith(b"X-Zope-To: "):
+            i = len(b"X-Zope-To: ")
+            toaddrs = tuple(addr.decode() for addr in second[i:].split(b", "))
 
         return fromaddr, toaddrs, rest
 
@@ -275,7 +275,7 @@ class QueueProcessorThread(threading.Thread):
                 # XXX: Silently ignoring all other causes here.
 
             # read message file and send contents
-            with open(filename) as f:
+            with open(filename, 'rb') as f:
                 message = f.read()
 
             fromaddr, toaddrs, message = self._parseMessage(message)

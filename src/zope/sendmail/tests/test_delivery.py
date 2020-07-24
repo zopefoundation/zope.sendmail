@@ -109,7 +109,7 @@ class TestAbstractMailDelivery(unittest.TestCase):
 
     def test_bad_message_id(self):
         class Parser(object):
-            def parsestr(self, s):
+            def parsestr(self, s, headersonly=False):
                 return {'Message-Id': 'bad id'}
 
         import email.parser
@@ -131,26 +131,37 @@ class TestDirectMailDelivery(unittest.TestCase):
         verifyObject(IDirectMailDelivery, delivery)
         self.assertEqual(delivery.mailer, mailer)
 
-    def testSend(self):
+    def testSend(self, send_unicode=False, message=None):
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
         toaddrs = ('Guido <guido@example.com>',
                    'Steve <steve@examplecom>')
-        opt_headers = ('From: Jim <jim@example.org>\n'
-                       'To: some-zope-coders:;\n'
-                       'Date: Mon, 19 May 2003 10:17:36 -0400\n'
-                       'Message-Id: <20030519.1234@example.org>\n')
-        message = ('Subject: example\n'
-                   '\n'
-                   'This is just an example\n')
+        opt_headers = (b'From: Jim <jim@example.org>\n'
+                       b'To: some-zope-coders:;\n'
+                       b'Date: Mon, 19 May 2003 10:17:36 -0400\n'
+                       b'Message-Id: <20030519.1234@example.org>\n')
+        if message is None:
+            message = (b'Subject: example\n'
+                       b'\n'
+                       b'This is just an example\n')
+
+        if send_unicode:
+            opt_headers_bytes = opt_headers
+            opt_headers = opt_headers.decode('utf-8')
+            message_bytes = message + b'\xc3\xa4'
+            message = message_bytes.decode('utf-8')
+        else:
+            message_bytes = message
+            opt_headers_bytes = opt_headers
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(msgid, '20030519.1234@example.org')
         self.assertEqual(mailer.sent_messages, [])
         transaction.commit()
         self.assertEqual(mailer.sent_messages,
-                         [(fromaddr, toaddrs, opt_headers + message)])
+                         [(fromaddr, toaddrs,
+                           opt_headers_bytes + message_bytes)])
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, message)
@@ -160,15 +171,29 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(len(mailer.sent_messages), 1)
         self.assertEqual(mailer.sent_messages[0][0], fromaddr)
         self.assertEqual(mailer.sent_messages[0][1], toaddrs)
-        self.assertTrue(mailer.sent_messages[0][2].endswith(message))
-        new_headers = mailer.sent_messages[0][2][:-len(message)]
-        self.assertIn('Message-Id: <%s>' % msgid, new_headers)
+        self.assertTrue(mailer.sent_messages[0][2].endswith(message_bytes))
+        new_headers = mailer.sent_messages[0][2][:-len(message_bytes)]
+        self.assertIn(('Message-Id: <%s>' % msgid).encode(), new_headers)
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(mailer.sent_messages, [])
         transaction.abort()
         self.assertEqual(mailer.sent_messages, [])
+
+    def testSendUnicode(self):
+        self.testSend(send_unicode=True)
+
+    def testSendLatin1(self):
+        '''
+        Test to send a mail that is not valid UTF-8. Since we are using bytes
+        everywhere, this is not a problem.
+        '''
+        message = (b'Subject: example\n'
+                   b'Content-Type: text/plain; charset="latin1"\n'
+                   b'\n'
+                   b'\xfc')
+        self.testSend(message=message)
 
     def testBrokenMailerErrorsAreEaten(self):
         from zope.testing.loggingsupport import InstalledHandler
@@ -234,7 +259,7 @@ class TestDirectMailDelivery(unittest.TestCase):
 
 class MaildirWriterStub(object):
 
-    data = ''
+    data = b''
     commited_messages = []  # this list is shared among all instances
     aborted_messages = []   # this one too
     _closed = False
@@ -296,7 +321,7 @@ class WritableMaildirStub(MaildirStub):
     STUB_DEFAULT_MESSAGE_SENT = (
         'foo@example.com',
         ('bar@example.com', 'baz@example.com'),
-        'Header: value\n\nBody\n')
+        b'Header: value\n\nBody\n')
 
     STUB_DEFAULT_MESSAGE_RECPT = ('bar@example.com', 'baz@example.com')
 
@@ -431,15 +456,15 @@ class TestQueuedMailDelivery(unittest.TestCase):
         fromaddr = 'jim@example.com'
         toaddrs = ('guido@example.com',
                    'steve@examplecom')
-        zope_headers = ('X-Zope-From: jim@example.com\n'
-                        'X-Zope-To: guido@example.com, steve@examplecom\n')
-        opt_headers = ('From: Jim <jim@example.org>\n'
-                       'To: some-zope-coders:;\n'
-                       'Date: Mon, 19 May 2003 10:17:36 -0400\n'
-                       'Message-Id: <20030519.1234@example.org>\n')
-        message = ('Subject: example\n'
-                   '\n'
-                   'This is just an example\n')
+        zope_headers = (b'X-Zope-From: jim@example.com\n'
+                        b'X-Zope-To: guido@example.com, steve@examplecom\n')
+        opt_headers = (b'From: Jim <jim@example.org>\n'
+                       b'To: some-zope-coders:;\n'
+                       b'Date: Mon, 19 May 2003 10:17:36 -0400\n'
+                       b'Message-Id: <20030519.1234@example.org>\n')
+        message = (b'Subject: example\n'
+                   b'\n'
+                   b'This is just an example\n')
 
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
         self.assertEqual(msgid, '20030519.1234@example.org')
@@ -461,9 +486,10 @@ class TestQueuedMailDelivery(unittest.TestCase):
             MaildirWriterStub.commited_messages[0].endswith(message)
         )
         new_headers = MaildirWriterStub.commited_messages[0][:-len(message)]
-        self.assertIn('Message-Id: <%s>' % msgid, new_headers)
-        self.assertIn('X-Zope-From: %s' % fromaddr, new_headers)
-        self.assertIn('X-Zope-To: %s' % ", ".join(toaddrs), new_headers)
+        self.assertIn(('Message-Id: <%s>' % msgid).encode(), new_headers)
+        self.assertIn(('X-Zope-From: %s' % fromaddr).encode(), new_headers)
+        self.assertIn(('X-Zope-To: %s' % ", ".join(toaddrs)).encode(),
+                      new_headers)
         self.assertEqual(MaildirWriterStub.aborted_messages, [])
 
         MaildirWriterStub.commited_messages = []

@@ -35,6 +35,7 @@ from zope.sendmail.maildir import Maildir
 # BBB: this import is needed for backward compatibility with older versions of
 # zope.sendmail which defined QueueProcessorThread in this module
 from zope.sendmail.queue import QueueProcessorThread  # noqa: F401
+from ._compat import PY2
 
 
 log = logging.getLogger("MailDataManager")
@@ -103,16 +104,31 @@ class AbstractMailDelivery(object):
         return "%s@%s" % (left_part, gethostname())
 
     def send(self, fromaddr, toaddrs, message):
-        parser = email.parser.Parser()
-        msg = parser.parsestr(message)
-        messageid = msg.get('Message-Id')
+        # Switch the message to be bytes immediately, any encoding
+        # peculiarities should be handled before.
+        if message is None:
+            header = b''
+        else:
+            if not isinstance(message, bytes):
+                message = message.encode('utf-8')
+            # determine line separator type (assumes consistency)
+            nli = message.find(b'\n')
+            line_sep = b'\n' if nli < 1 or message[nli - 1] != b'\r' \
+                else b'\r\n'
+            header = message.split(line_sep * 2, 1)[0]
+
+        if PY2:
+            parse = email.parser.Parser().parsestr  # pragma: PY2
+        else:
+            parse = email.parser.BytesParser().parsebytes  # pragma: PY3
+        messageid = parse(header).get('Message-Id')
         if messageid:
             if not messageid.startswith('<') or not messageid.endswith('>'):
                 raise ValueError('Malformed Message-Id header')
             messageid = messageid[1:-1]
         else:
             messageid = self.newMessageId()
-            message = 'Message-Id: <%s>\n%s' % (messageid, message)
+            message = b'Message-Id: <%s>\n%s' % (messageid.encode(), message)
         transaction.get().join(
             self.createDataManager(fromaddr, toaddrs, message))
         return messageid
@@ -157,8 +173,8 @@ class QueuedMailDelivery(AbstractMailDelivery):
     def createDataManager(self, fromaddr, toaddrs, message):
         maildir = Maildir(self.queuePath, True)
         msg = maildir.newMessage()
-        msg.write('X-Zope-From: %s\n' % fromaddr)
-        msg.write('X-Zope-To: %s\n' % ", ".join(toaddrs))
+        msg.write(b'X-Zope-From: %s\n' % fromaddr.encode())
+        msg.write(b'X-Zope-To: %s\n' % ", ".join(toaddrs).encode())
         msg.write(message)
         msg.close()
         return MailDataManager(msg.commit, onAbort=msg.abort)
