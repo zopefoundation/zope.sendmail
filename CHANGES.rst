@@ -5,8 +5,9 @@
 5.1 (unreleased)
 ================
 
-- Nothing changed yet.
-
+- Use ``pywin32`` again, not any longer the meanwhile outdated fork named ``pypiwin32``.
+  Add some information for installation with buildout.
+  (`#30 <https://github.com/zopefoundation/zope.sendmail/blob/master/docs/usage.rst>`_)
 
 5.0 (2019-04-03)
 ================
