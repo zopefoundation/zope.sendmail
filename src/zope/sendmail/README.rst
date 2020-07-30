@@ -7,6 +7,14 @@ integrates with the transaction mechanism and queues your emails to be sent on
 successful commits only.
 
 
+Installation on Windows/ Buildout
+=================================
+
+When using Windows, `pywin32 <https://github.com/mhammond/pywin32>`_ is required.
+``pywin32`` can only be installed using ``pip``, it **does not work with ``zc.buildout``**.
+When using buildout, prior to the execution of buildout, use ``pip`` to install ``pywin32``.
+
+
 API
 ===
 
