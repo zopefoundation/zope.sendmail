@@ -2,7 +2,7 @@
  Changes
 =========
 
-5.1 (unreleased)
+5.1 (2020-07-31)
 ================
 
 - Use ``pywin32`` again, not any longer the meanwhile outdated fork named ``pypiwin32``.
