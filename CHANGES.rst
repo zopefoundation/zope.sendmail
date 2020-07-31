@@ -9,6 +9,15 @@
   Add some information for installation with buildout.
   (`#30 <https://github.com/zopefoundation/zope.sendmail/blob/master/docs/usage.rst>`_)
 
+- Support ``bytes`` messages; consistently convert messages
+  using a "text" type (i.e. ``str`` for Python 3, ``unicode`` for Python 2)
+  into ``bytes`` via utf-8 encoding.
+  Prerequisite to fix
+  `Products.MailHost#30
+  <https://github.com/zopefoundation/Products.MailHost/issues/30>`_.
+
+
+
 5.0 (2019-04-03)
 ================
 
