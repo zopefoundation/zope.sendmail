@@ -269,7 +269,7 @@ class QueueProcessorThread(threading.Thread):
                     return
                 # XXX: Silently ignoring all other errno
             except Exception as e:  # pragma: no cover
-                if e[0] == 183 and e[1] == 'CreateHardLink':
+                if e.args[:2] == (183, 'CreateHardLink'):
                     # file exists, win32
                     return
                 # XXX: Silently ignoring all other causes here.
