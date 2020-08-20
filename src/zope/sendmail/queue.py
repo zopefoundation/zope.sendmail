@@ -32,11 +32,14 @@ from zope.sendmail.mailer import SMTPMailer
 import sys
 if sys.platform == 'win32':  # pragma: no cover
     import win32file
+    import winerror
+    import pywintypes
 
     def _os_link(src, dst):
         return win32file.CreateHardLink(dst, src, None)
 else:
     _os_link = os.link
+    pywintypes = None
 
 try:
     import ConfigParser as configparser
@@ -269,7 +272,10 @@ class QueueProcessorThread(threading.Thread):
                     return
                 # XXX: Silently ignoring all other errno
             except Exception as e:  # pragma: no cover
-                if e.args[:2] == (183, 'CreateHardLink'):
+                if (pywintypes is not None
+                        and isinstance(e, pywintypes.error)
+                        and e.funcname == 'CreateHardLink'
+                        and e.winerror == winerror.ERROR_ALREADY_EXISTS):
                     # file exists, win32
                     return
                 # XXX: Silently ignoring all other causes here.
