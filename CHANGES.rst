@@ -5,7 +5,8 @@
 5.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix TypeError: 'error' object is not subscriptable during error handling on
+  Windows (`#33 <https://github.com/zopefoundation/zope.sendmail/pull/33>`_).
 
 
 5.1 (2020-07-31)
@@ -13,7 +14,7 @@
 
 - Use ``pywin32`` again, not any longer the meanwhile outdated fork named ``pypiwin32``.
   Add some information for installation with buildout.
-  (`#30 <https://github.com/zopefoundation/zope.sendmail/blob/master/docs/usage.rst>`_)
+  (`#30 <https://github.com/zopefoundation/zope.sendmail/issues/30>`_)
 
 - Support ``bytes`` messages; consistently convert messages
   using a "text" type (i.e. ``str`` for Python 3, ``unicode`` for Python 2)
