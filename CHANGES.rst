@@ -5,6 +5,9 @@
 5.2 (unreleased)
 ================
 
+- Add minimal savepoint support, so we do not fail if any code tries to create a savepoint.
+  (`#35 <https://github.com/zopefoundation/zope.sendmail/issues/35>`_).
+
 - Fix TypeError: 'error' object is not subscriptable during error handling on
   Windows (`#33 <https://github.com/zopefoundation/zope.sendmail/pull/33>`_).
 

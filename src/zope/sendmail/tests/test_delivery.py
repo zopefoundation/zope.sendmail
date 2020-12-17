@@ -256,6 +256,35 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(1, len(w))
         self.assertIn("does not provide a vote method", str(w[0]))
 
+    def testSavepoint(self):
+        mailer = MailerStub()
+        delivery = DirectMailDelivery(mailer)
+        fromaddr = 'Jim <jim@example.com'
+        toaddrs = ('Guido <guido@example.com>',)
+        delivery.send(fromaddr, toaddrs, b'Subject: one')
+        # Reminder: nothing is sent yet, sending happens after commit.
+        self.assertEqual(mailer.sent_messages, [])
+        # We create a savepoint.  If we rollback to this savepoint,
+        # the previous mail should still remain in the queue.
+        savepoint = transaction.savepoint()
+        delivery.send(fromaddr, toaddrs, b'Subject: two')
+        self.assertEqual(mailer.sent_messages, [])
+        # We rollback to the savepoint, so mail 2 should never be send anymore.
+        savepoint.rollback()
+        self.assertEqual(mailer.sent_messages, [])
+        # Any mail after this *should* be sent.
+        delivery.send(fromaddr, toaddrs, b'Subject: three')
+        self.assertEqual(mailer.sent_messages, [])
+        transaction.commit()
+        self.assertEqual(len(mailer.sent_messages), 2)
+        # They might not necessarily be sent in the order we expect.
+        # Get the subject lines.
+        all_text = b'\n'.join([mail[2] for mail in mailer.sent_messages])
+        lines = all_text.splitlines()
+        subjects = [line for line in lines if b'Subject' in line]
+        subjects.sort()
+        self.assertEqual([b'Subject: one', b'Subject: three'], subjects)
+
 
 class MaildirWriterStub(object):
 

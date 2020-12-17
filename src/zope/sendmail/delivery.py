@@ -25,7 +25,8 @@ from random import randrange
 from time import strftime
 from socket import gethostname
 
-from transaction.interfaces import IDataManager
+from transaction.interfaces import ISavepointDataManager
+from transaction.interfaces import IDataManagerSavepoint
 import transaction
 
 from zope.interface import implementer
@@ -41,7 +42,14 @@ from ._compat import PY2
 log = logging.getLogger("MailDataManager")
 
 
-@implementer(IDataManager)
+@implementer(IDataManagerSavepoint)
+class _NoOpSavepoint(object):
+
+    def rollback(self):
+        return
+
+
+@implementer(ISavepointDataManager)
 class MailDataManager(object):
 
     def __init__(self, callable, args=(), vote=None, onAbort=None):
@@ -61,6 +69,12 @@ class MailDataManager(object):
 
     def sortKey(self):
         return str(id(self))
+
+    def savepoint(self):
+        # We do not need savepoint/rollback, but some code (like CMFEditions)
+        # uses savepoints, and breaks when one datamanager does not have this.
+        # So provide a dummy implementation.
+        return _NoOpSavepoint()
 
     # No subtransaction support.
     def abort_sub(self, txn):
