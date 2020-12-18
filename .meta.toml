@@ -1,0 +1,19 @@
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/pure-python
+[meta]
+template = "pure-python"
+commit-id = "3ecb8f5a831f41f5bf44a4f5c4357ecefb62a50b"
+
+[python]
+with-pypy = true
+with-legacy-python = true
+with-docs = true
+with-sphinx-doctests = false
+
+[coverage]
+fail-under = 99
+
+[manifest]
+additional-rules = [
+    "include *.yml",
+    ]
