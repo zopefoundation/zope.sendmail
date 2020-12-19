@@ -133,6 +133,7 @@ class TestSMTPMailer(unittest.TestCase):
         # The mailer re-opens itself as needed when sending
         # multiple mails.
         smtps = []
+        mailer = self._makeMailer(smtp_hook=smtps.append)
 
         # Note: this test needs to be thread-safe so it must avoid mutating
         # attributes on `self`!
@@ -141,7 +142,6 @@ class TestSMTPMailer(unittest.TestCase):
             fromaddr = 'me@example.com' + str(run)
             toaddrs = ('you@example.com', 'him@example.com')
             msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-            mailer = self._makeMailer(smtp_hook=smtps.append)
             mailer.send(fromaddr, toaddrs, msgtext)
             smtp = smtps[-1]
             self.assertEqual(smtp.fromaddr, fromaddr)
