@@ -8,6 +8,8 @@
 - Fix TypeError: 'error' object is not subscriptable during error handling on
   Windows (`#33 <https://github.com/zopefoundation/zope.sendmail/pull/33>`_).
 
+- Add support for Python 3.9.
+
 
 5.1 (2020-07-31)
 ================
