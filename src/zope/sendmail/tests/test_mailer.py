@@ -15,9 +15,10 @@
 """Tests for mailers.
 """
 
+import unittest
+from functools import partial
 from ssl import SSLError
 
-import unittest
 from zope.interface.verify import verifyObject
 from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail.mailer import SMTPMailer
@@ -91,20 +92,25 @@ class TestSMTPMailer(unittest.TestCase):
     assertRaisesRegex = getattr(unittest.TestCase, 'assertRaisesRegex',
                                 unittest.TestCase.assertRaisesRegexp)
 
-    def _makeSMTP(self, h, p):
-        self.smtp = self.SMTPClass(h, p)
-        self.smtp_hook(self.smtp)
-        return self.smtp
+    def _makeMailer(self, port=None, smtp_hook=None):
+        if port is None:
+            mailer = SMTPMailer()
+        else:
+            mailer = SMTPMailer(u'localhost', port)
+
+        def _make_smtp(host, port):
+            smtp = self.SMTPClass(host, port)
+            if smtp_hook:
+                smtp_hook(smtp)
+            return smtp
+
+        mailer.smtp = _make_smtp
+        return mailer
 
     def setUp(self, port=None):
         self.smtp = None
-        if port is None:
-            self.mailer = SMTPMailer()
-        else:
-            self.mailer = SMTPMailer(u'localhost', port)
-
-        self.mailer.smtp = self._makeSMTP
-        self.smtp_hook = lambda smtp: None
+        self.mailer = self._makeMailer(
+            port=port, smtp_hook=partial(setattr, self, 'smtp'))
 
     def test_interface(self):
         verifyObject(ISMTPMailer, self.mailer)
@@ -127,21 +133,22 @@ class TestSMTPMailer(unittest.TestCase):
         # The mailer re-opens itself as needed when sending
         # multiple mails.
         smtps = []
+        mailer = self._makeMailer(smtp_hook=smtps.append)
 
-        def hook(smtp):
-            smtps.append(smtp)
+        # Note: this test needs to be thread-safe so it must avoid mutating
+        # attributes on `self`!
 
-        self.smtp_hook = hook
         for run in (1, 2):
             fromaddr = 'me@example.com' + str(run)
             toaddrs = ('you@example.com', 'him@example.com')
             msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-            self.mailer.send(fromaddr, toaddrs, msgtext)
-            self.assertEqual(self.smtp.fromaddr, fromaddr)
-            self.assertEqual(self.smtp.toaddrs, toaddrs)
-            self.assertEqual(self.smtp.msgtext, msgtext)
-            self.assertTrue(self.smtp.quitted)
-            self.assertTrue(self.smtp.closed)
+            mailer.send(fromaddr, toaddrs, msgtext)
+            smtp = smtps[-1]
+            self.assertEqual(smtp.fromaddr, fromaddr)
+            self.assertEqual(smtp.toaddrs, toaddrs)
+            self.assertEqual(smtp.msgtext, msgtext)
+            self.assertTrue(smtp.quitted)
+            self.assertTrue(smtp.closed)
 
         self.assertEqual(2, len(smtps))
 
@@ -232,11 +239,12 @@ class TestSMTPMailer(unittest.TestCase):
         def hook(smtp):
             smtp.ehlo_code = 100
             smtp.helo = lambda: (100, "Nope")
-        self.smtp_hook = hook
+
+        mailer = self._makeMailer(smtp_hook=hook)
 
         with self.assertRaisesRegex(RuntimeError,
                                     "Error sending HELO to the SMTP server"):
-            self.mailer.vote(None, None, None)
+            mailer.vote(None, None, None)
 
     def test_abort_no_conn(self):
         self.assertIsNone(self.mailer.abort())
