@@ -2,7 +2,7 @@
  Changes
 =========
 
-5.2 (unreleased)
+5.2 (2021-01-18)
 ================
 
 - Add minimal savepoint support, so we do not fail if any code tries to create a savepoint.

@@ -50,7 +50,7 @@ LONG_DESCRIPTION = (
 
 setup(
     name='zope.sendmail',
-    version='5.2.dev0',
+    version='5.2',
     url='https://github.com/zopefoundation/zope.sendmail',
     license='ZPL 2.1',
     description='Zope sendmail',
