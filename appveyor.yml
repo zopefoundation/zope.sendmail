@@ -17,6 +17,7 @@ environment:
     - python: 39-x64
 
 install:
+  - "SET PYTHONVERSION=%PYTHON%"
   - "SET PATH=C:\\Python%PYTHON%;c:\\Python%PYTHON%\\scripts;%PATH%"
   - ps: |
       $env:PYTHON = "C:\\Python${env:PYTHON}"
@@ -31,6 +32,8 @@ install:
   - pip install -U -e .[test]
 
 build: false
+matrix:
+  fast_finish: true
 
 test_script:
   - zope-testrunner --test-path=src
