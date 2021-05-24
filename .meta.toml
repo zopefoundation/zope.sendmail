@@ -2,7 +2,7 @@
 # https://github.com/zopefoundation/meta/tree/master/config/pure-python
 [meta]
 template = "pure-python"
-commit-id = "13207dce4ea1a51f579fedbf1b41b30fb60d4216"
+commit-id = "d4e8550e4a37df10866d376fceac4e91689df8c5"
 
 [python]
 with-pypy = true
@@ -13,3 +13,12 @@ with-appveyor = true
 
 [coverage]
 fail-under = 99
+
+[manifest]
+additional-rules = [
+    "recursive-include src *.rst",
+    "recursive-include src *.zcml",
+    ]
+
+[tox]
+use-flake8 = true
