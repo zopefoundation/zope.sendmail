@@ -163,7 +163,9 @@ class QueueProcessorThread(threading.Thread):
 
         if second.startswith(b"X-Zope-To: "):
             i = len(b"X-Zope-To: ")
-            toaddrs = tuple(addr.decode() for addr in second[i:].split(b", "))
+            toaddrs = tuple(
+                addr.decode() for addr in second[i:].split(b", ") if addr
+            )
 
         return fromaddr, toaddrs, rest
 

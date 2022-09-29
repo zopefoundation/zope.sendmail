@@ -7,6 +7,9 @@
 
 - Add support for Python 3.10.
 
+- Do not try to send queued emails to an empty address
+  (`#45 <https://github.com/zopefoundation/zope.sendmail/issues/45>`_).
+
 
 5.2 (2021-01-18)
 ================
