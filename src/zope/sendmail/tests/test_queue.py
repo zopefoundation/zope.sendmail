@@ -139,7 +139,12 @@ class TestQueueProcessorThread(unittest.TestCase):
         self.assertTrue(os.path.exists(md.path))
 
     def test_threadName(self):
-        self.assertEqual(self.thread.getName(),
+        try:
+            thread_name = self.thread.name
+        except AttributeError:
+            # Deprecated since Python 3.10
+            thread_name = self.thread.getName()
+        self.assertEqual(thread_name,
                          "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
