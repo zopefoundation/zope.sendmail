@@ -139,7 +139,7 @@ class TestQueueProcessorThread(unittest.TestCase):
         self.assertTrue(os.path.exists(md.path))
 
     def test_threadName(self):
-        self.assertEqual(self.thread.getName(),
+        self.assertEqual(self.thread.name,
                          "zope.sendmail.queue.QueueProcessorThread")
 
     def test_parseMessage(self):
