@@ -19,11 +19,13 @@ import random
 import socket
 import time
 
-from zope.interface import implementer, provider
+from zope.interface import implementer
+from zope.interface import provider
 
-from zope.sendmail.interfaces import \
-     IMaildirFactory, IMaildir, IMaildirMessageWriter
 from zope.sendmail._compat import text_type
+from zope.sendmail.interfaces import IMaildir
+from zope.sendmail.interfaces import IMaildirFactory
+from zope.sendmail.interfaces import IMaildirMessageWriter
 
 
 @provider(IMaildirFactory)

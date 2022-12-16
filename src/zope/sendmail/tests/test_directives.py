@@ -15,20 +15,20 @@
 """
 import os
 import shutil
-import unittest
 import tempfile
-
+import unittest
 
 import zope.component
 from zope.component.testing import PlacelessSetup
 from zope.configuration import xmlconfig
 from zope.interface import implementer
 
-from zope.sendmail.interfaces import \
-     IMailDelivery, IMailer, ISMTPMailer
+import zope.sendmail.tests
 from zope.sendmail import delivery
 from zope.sendmail import zcml
-import zope.sendmail.tests
+from zope.sendmail.interfaces import IMailDelivery
+from zope.sendmail.interfaces import IMailer
+from zope.sendmail.interfaces import ISMTPMailer
 
 
 class MaildirStub(object):

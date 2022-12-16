@@ -17,15 +17,21 @@ __docformat__ = 'restructuredtext'
 
 from zope.component import getUtility
 from zope.component.zcml import handler
-from zope.configuration.fields import Path
 from zope.configuration.exceptions import ConfigurationError
+from zope.configuration.fields import Path
 from zope.interface import Interface
-from zope.schema import TextLine, ASCIILine, Int, Bool
+from zope.schema import ASCIILine
+from zope.schema import Bool
+from zope.schema import Int
+from zope.schema import TextLine
 
-from zope.sendmail.delivery import QueuedMailDelivery, DirectMailDelivery
-from zope.sendmail.interfaces import IMailer, IMailDelivery
+from zope.sendmail.delivery import DirectMailDelivery
+from zope.sendmail.delivery import QueuedMailDelivery
+from zope.sendmail.interfaces import IMailDelivery
+from zope.sendmail.interfaces import IMailer
 from zope.sendmail.mailer import SMTPMailer
 from zope.sendmail.queue import QueueProcessorThread
+
 
 try:
     from zope.component.security import proxify

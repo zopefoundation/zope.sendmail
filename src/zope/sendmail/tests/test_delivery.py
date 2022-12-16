@@ -15,21 +15,21 @@
 
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
-import sys
-import smtplib
-import unittest
 import os.path
-import tempfile
 import shutil
+import smtplib
+import sys
+import tempfile
+import unittest
 
 import transaction
 from zope.interface import implementer
 from zope.interface.verify import verifyObject
 
-from zope.sendmail.interfaces import IMailer
-from zope.sendmail.interfaces import IDirectMailDelivery
 from zope.sendmail.delivery import AbstractMailDelivery
 from zope.sendmail.delivery import DirectMailDelivery
+from zope.sendmail.interfaces import IDirectMailDelivery
+from zope.sendmail.interfaces import IMailer
 
 
 @implementer(IMailer)
@@ -49,6 +49,7 @@ class TestMailDataManager(unittest.TestCase):
 
     def testInterface(self):
         from transaction.interfaces import IDataManager
+
         from zope.sendmail.delivery import MailDataManager
         manager = MailDataManager(object, (1, 2))
         verifyObject(IDataManager, manager)
@@ -473,8 +474,8 @@ class TestQueuedMailDelivery(unittest.TestCase):
         MaildirWriterStub.aborted_messages = []
 
     def testInterface(self):
-        from zope.sendmail.interfaces import IQueuedMailDelivery
         from zope.sendmail.delivery import QueuedMailDelivery
+        from zope.sendmail.interfaces import IQueuedMailDelivery
         delivery = QueuedMailDelivery('/path/to/mailbox')
         verifyObject(IQueuedMailDelivery, delivery)
         self.assertEqual(delivery.queuePath, '/path/to/mailbox')

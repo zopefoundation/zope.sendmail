@@ -15,15 +15,15 @@
 """
 from __future__ import print_function
 
-import unittest
-import stat
-import os
 import errno
+import os
+import stat
+import unittest
 
 from zope.interface.verify import verifyObject
 
-from zope.sendmail.maildir import Maildir
 from zope.sendmail.interfaces import IMaildirMessageWriter
+from zope.sendmail.maildir import Maildir
 
 
 class FakeSocketModule(object):
@@ -189,7 +189,8 @@ class TestMaildir(unittest.TestCase):
         self.fake_os_module._all_files_exist = False
 
     def test_factory(self):
-        from zope.sendmail.interfaces import IMaildirFactory, IMaildir
+        from zope.sendmail.interfaces import IMaildir
+        from zope.sendmail.interfaces import IMaildirFactory
         verifyObject(IMaildirFactory, Maildir)
 
         # Case 1: normal maildir
