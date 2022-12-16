@@ -18,7 +18,9 @@ __docformat__ = 'restructuredtext'
 import zope.component
 from zope.interface import directlyProvides
 from zope.schema.interfaces import IVocabularyFactory
-from zope.schema.vocabulary import SimpleVocabulary, SimpleTerm
+from zope.schema.vocabulary import SimpleTerm
+from zope.schema.vocabulary import SimpleVocabulary
+
 from zope.sendmail.interfaces import IMailDelivery
 
 

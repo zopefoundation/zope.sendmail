@@ -16,14 +16,15 @@
 """
 __docformat__ = 'restructuredtext'
 
-from threading import local
-from ssl import SSLError
 from smtplib import SMTP
+from ssl import SSLError
+from threading import local
 
 from zope.interface import implementer
-from zope.sendmail.interfaces import ISMTPMailer
+
 from zope.sendmail._compat import PY2
 from zope.sendmail._compat import text_type
+from zope.sendmail.interfaces import ISMTPMailer
 
 
 class _SMTPState(local):

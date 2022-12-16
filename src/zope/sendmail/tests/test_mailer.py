@@ -20,6 +20,7 @@ from functools import partial
 from ssl import SSLError
 
 from zope.interface.verify import verifyObject
+
 from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail.mailer import SMTPMailer
 

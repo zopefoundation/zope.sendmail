@@ -48,10 +48,15 @@ Email sending from Zope 3 applications works as follows:
 """
 __docformat__ = 'restructuredtext'
 
-from zope.interface import Interface, Attribute
-from zope.schema import TextLine, Int, Password, Bool
-
 from zope.i18nmessageid import MessageFactory
+from zope.interface import Attribute
+from zope.interface import Interface
+from zope.schema import Bool
+from zope.schema import Int
+from zope.schema import Password
+from zope.schema import TextLine
+
+
 _ = MessageFactory('zope')
 
 

@@ -17,25 +17,26 @@ This module contains various implementations of `MailDeliverys`.
 """
 __docformat__ = 'restructuredtext'
 
-import os
 import email.parser
 import logging
+import os
 import warnings
 from random import randrange
-from time import strftime
 from socket import gethostname
+from time import strftime
 
-from transaction.interfaces import ISavepointDataManager
-from transaction.interfaces import IDataManagerSavepoint
 import transaction
-
+from transaction.interfaces import IDataManagerSavepoint
+from transaction.interfaces import ISavepointDataManager
 from zope.interface import implementer
-from zope.sendmail.interfaces import IDirectMailDelivery, IQueuedMailDelivery
-from zope.sendmail.maildir import Maildir
 
+from zope.sendmail.interfaces import IDirectMailDelivery
+from zope.sendmail.interfaces import IQueuedMailDelivery
+from zope.sendmail.maildir import Maildir
 # BBB: this import is needed for backward compatibility with older versions of
 # zope.sendmail which defined QueueProcessorThread in this module
 from zope.sendmail.queue import QueueProcessorThread  # noqa: F401
+
 from ._compat import PY2
 
 

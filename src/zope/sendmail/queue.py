@@ -17,23 +17,24 @@ This module contains the queue processor thread.
 """
 __docformat__ = 'restructuredtext'
 
-import atexit
-import logging
 import argparse
+import atexit
+import errno
+import logging
 import os
 import smtplib
+import sys
 import threading
 import time
-import errno
 
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.mailer import SMTPMailer
 
-import sys
+
 if sys.platform == 'win32':  # pragma: no cover
+    import pywintypes
     import win32file
     import winerror
-    import pywintypes
 
     def _os_link(src, dst):
         return win32file.CreateHardLink(dst, src, None)

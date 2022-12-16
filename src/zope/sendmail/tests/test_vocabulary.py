@@ -27,6 +27,7 @@ class MailDeliveryNamesTests(PlacelessSetup, unittest.TestCase):
     def _register(self, *names):
         from zope.component import provideUtility
         from zope.interface import implementer
+
         from zope.sendmail.interfaces import IMailDelivery
         from zope.sendmail.vocabulary import MailDeliveryNames
 

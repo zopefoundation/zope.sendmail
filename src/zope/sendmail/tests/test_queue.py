@@ -16,23 +16,22 @@
 Simple implementation of the MailDelivery, Mailers and MailEvents.
 """
 import errno
+import io
 import os.path
 import shutil
 import sys
-from tempfile import mkdtemp
 import unittest
-import io
 from contextlib import contextmanager
-
-from zope.sendmail.queue import ConsoleApp
-from zope.sendmail.tests.test_delivery import WritableMaildirStub
-from zope.sendmail.tests.test_delivery import LoggerStub
-from zope.sendmail.tests.test_delivery import BrokenMailerStub
-from zope.sendmail.tests.test_delivery import SMTPResponseExceptionMailerStub
-from zope.sendmail.tests.test_delivery import MailerStub
-from zope.sendmail.tests.test_delivery import BizzarreMailError
+from tempfile import mkdtemp
 
 from zope.sendmail import queue
+from zope.sendmail.queue import ConsoleApp
+from zope.sendmail.tests.test_delivery import BizzarreMailError
+from zope.sendmail.tests.test_delivery import BrokenMailerStub
+from zope.sendmail.tests.test_delivery import LoggerStub
+from zope.sendmail.tests.test_delivery import MailerStub
+from zope.sendmail.tests.test_delivery import SMTPResponseExceptionMailerStub
+from zope.sendmail.tests.test_delivery import WritableMaildirStub
 
 
 class QPTesting(queue.QueueProcessorThread):
