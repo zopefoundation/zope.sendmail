@@ -102,8 +102,8 @@ class IQueuedMailDelivery(IMailDelivery):
     """
 
     queuePath = TextLine(
-        title=_(u"Queue path"),
-        description=_(u"Pathname of the directory used to queue mail."))
+        title=_("Queue path"),
+        description=_("Pathname of the directory used to queue mail."))
 
 
 class IMailQueueProcessor(Interface):
@@ -111,13 +111,13 @@ class IMailQueueProcessor(Interface):
     """
 
     queuePath = TextLine(
-        title=_(u"Queue Path"),
-        description=_(u"Pathname of the directory used to queue mail."))
+        title=_("Queue Path"),
+        description=_("Pathname of the directory used to queue mail."))
 
     pollingInterval = Int(
-        title=_(u"Polling Interval"),
-        description=_(u"How often the queue is checked for new messages"
-                      u" (in milliseconds)"),
+        title=_("Polling Interval"),
+        description=_("How often the queue is checked for new messages"
+                      " (in milliseconds)"),
         default=5000)
 
     mailer = Attribute("IMailer that is used for message delivery")
@@ -152,29 +152,29 @@ class ISMTPMailer(IMailer):
     """A mailer that delivers mail to a relay host via SMTP."""
 
     hostname = TextLine(
-        title=_(u"Hostname"),
-        description=_(u"Name of server to be used as SMTP server."))
+        title=_("Hostname"),
+        description=_("Name of server to be used as SMTP server."))
 
     port = Int(
-        title=_(u"Port"),
-        description=_(u"Port of SMTP service"),
+        title=_("Port"),
+        description=_("Port of SMTP service"),
         default=25)
 
     username = TextLine(
-        title=_(u"Username"),
-        description=_(u"Username used for optional SMTP authentication."))
+        title=_("Username"),
+        description=_("Username used for optional SMTP authentication."))
 
     password = Password(
-        title=_(u"Password"),
-        description=_(u"Password used for optional SMTP authentication."))
+        title=_("Password"),
+        description=_("Password used for optional SMTP authentication."))
 
     no_tls = Bool(
-        title=_(u"No TLS"),
-        description=_(u"Never use TLS for sending email."))
+        title=_("No TLS"),
+        description=_("Never use TLS for sending email."))
 
     force_tls = Bool(
-        title=_(u"Force TLS"),
-        description=_(u"Use TLS always for sending email."))
+        title=_("Force TLS"),
+        description=_("Use TLS always for sending email."))
 
 
 class IMaildirFactory(Interface):

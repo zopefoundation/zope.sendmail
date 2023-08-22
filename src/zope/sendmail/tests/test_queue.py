@@ -42,7 +42,7 @@ class QPTesting(queue.QueueProcessorThread):
         return WritableMaildirStub(self.test, path)
 
 
-class SMTPRecipientsRefusedMailerStub(object):
+class SMTPRecipientsRefusedMailerStub:
 
     def __init__(self, recipients):
         self.recipients = recipients
@@ -238,7 +238,7 @@ class TestQueueProcessorThread(unittest.TestCase):
     def test_stop_while_running(self):
         test = self
 
-        class Maildir(object):
+        class Maildir:
             count = 0
 
             def __iter__(self):
@@ -250,8 +250,6 @@ class TestQueueProcessorThread(unittest.TestCase):
                     test.thread.stop()
                     return
                 raise AssertionError("Should have stopped")
-
-            next = __next__  # Python 2
 
         self.thread.setMaildir(Maildir())
         self.thread.run()
@@ -500,7 +498,7 @@ class TestConsoleApp(unittest.TestCase):
         # override nothing, make sure defaults come through
         with open(ini_path, "w") as f:
             f.write("[app:zope-sendmail]\n\nqueue_path=foo\n")
-        cmdline = """zope-sendmail --config %s %s""" % (ini_path, self.dir)
+        cmdline = f"""zope-sendmail --config {ini_path} {self.dir}"""
         app = ConsoleApp(cmdline.split(), verbose=False)
         self.assertEqual("zope-sendmail", app.script_name)
         self.assertEqual(self.dir, app.queue_path)

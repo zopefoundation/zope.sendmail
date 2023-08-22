@@ -1,4 +1,3 @@
-# coding=utf-8
 ##############################################################################
 #
 # Copyright (c) 2003 Zope Foundation and Contributors.
@@ -25,11 +24,7 @@ from zope.sendmail.interfaces import ISMTPMailer
 from zope.sendmail.mailer import SMTPMailer
 
 
-# This works for both, Python 2 and 3.
-port_types = (int, str)
-
-
-class SMTP(object):
+class SMTP:
 
     fail_on_quit = False
 
@@ -38,7 +33,7 @@ class SMTP(object):
         self.port = p
         self.quitted = False
         self.closed = False
-        assert isinstance(p, port_types)
+        assert isinstance(p, str)
 
     def sendmail(self, f, t, m):
         assert not self.closed
@@ -88,16 +83,11 @@ class TestSMTPMailer(unittest.TestCase):
 
     SMTPClass = SMTP
 
-    # Avoid DeprecationWarning for assertRaisesRegexp on Python 3 while
-    # coping with Python 2 not having the Regex spelling variant
-    assertRaisesRegex = getattr(unittest.TestCase, 'assertRaisesRegex',
-                                unittest.TestCase.assertRaisesRegexp)
-
     def _makeMailer(self, port=None, smtp_hook=None):
         if port is None:
             mailer = SMTPMailer()
         else:
-            mailer = SMTPMailer(u'localhost', port)
+            mailer = SMTPMailer('localhost', port)
 
         def _make_smtp(host, port):
             smtp = self.SMTPClass(host, port)
@@ -119,7 +109,7 @@ class TestSMTPMailer(unittest.TestCase):
     def test_send(self):
         for run in (1, 2):
             if run == 2:
-                self.setUp(u'25')
+                self.setUp('25')
             fromaddr = 'me@example.com'
             toaddrs = ('you@example.com', 'him@example.com')
             msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
@@ -201,8 +191,8 @@ class TestSMTPMailer(unittest.TestCase):
         fromaddr = 'me@example.com'
         toaddrs = ('you@example.com', 'him@example.com')
         msgtext = 'Headers: headers\n\nbodybodybody\n-- \nsig\n'
-        self.mailer.username = u'f\u00f8\u00f8'  # double o slash
-        self.mailer.password = u'\u00e9vil'  # e acute
+        self.mailer.username = 'f\u00f8\u00f8'  # double o slash
+        self.mailer.password = '\u00e9vil'  # e acute
         self.mailer.hostname = 'spamrelay'
         self.mailer.port = 31337
         self.mailer.send(fromaddr, toaddrs, msgtext)
@@ -251,7 +241,7 @@ class TestSMTPMailer(unittest.TestCase):
         self.assertIsNone(self.mailer.abort())
 
     def test_abort_fails_call_close(self):
-        class Conn(object):
+        class Conn:
             closed = False
 
             def quit(self):
@@ -267,7 +257,7 @@ class TestSMTPMailer(unittest.TestCase):
         self.assertTrue(conn.closed)
 
     def test_send_no_tls_forced(self):
-        class Conn(object):
+        class Conn:
             def has_extn(self, name):
                 assert name == 'starttls'
                 return False
@@ -280,7 +270,7 @@ class TestSMTPMailer(unittest.TestCase):
             self.mailer.send(None, None, None)
 
     def test_send_no_esmtp_with_username(self):
-        class Conn(object):
+        class Conn:
             does_esmtp = False
 
             def has_extn(self, *args):

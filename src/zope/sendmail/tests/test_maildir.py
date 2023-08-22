@@ -13,7 +13,6 @@
 ##############################################################################
 """Unit tests for zope.sendmail.maildir module
 """
-from __future__ import print_function
 
 import errno
 import os
@@ -26,13 +25,13 @@ from zope.sendmail.interfaces import IMaildirMessageWriter
 from zope.sendmail.maildir import Maildir
 
 
-class FakeSocketModule(object):
+class FakeSocketModule:
 
     def gethostname(self):
         return 'myhostname'
 
 
-class FakeTimeModule(object):
+class FakeTimeModule:
 
     _timer = 1234500000
 
@@ -43,7 +42,7 @@ class FakeTimeModule(object):
         self._timer += n
 
 
-class FakeOsPathModule(object):
+class FakeOsPathModule:
 
     def __init__(self, files, dirs):
         self.files = files
@@ -63,7 +62,7 @@ class FakeOsPathModule(object):
         return self._mtimes.get(f, 10000)
 
 
-class FakeOsModule(object):
+class FakeOsModule:
 
     F_OK = 0
     O_CREAT = os.O_CREAT
@@ -152,7 +151,7 @@ class FakeOsModule(object):
         return FakeFile(filename, mode)
 
 
-class FakeFile(object):
+class FakeFile:
 
     def __init__(self, filename, mode):
         self._filename = filename
@@ -301,9 +300,9 @@ class TestMaildir(unittest.TestCase):
         writer = MaildirMessageWriter(fd, filename1, filename2)
         self.assertEqual(writer._fd._filename, filename1)
         self.assertEqual(writer._fd._mode, 'wb')
-        print(u'fe\xe8', end='', file=writer)
-        writer.write(u' fi\xe8')
-        writer.writelines([u' fo\xe8', u' fo\xf2'])
+        print('fe\xe8', end='', file=writer)
+        writer.write(' fi\xe8')
+        writer.writelines([' fo\xe8', ' fo\xf2'])
         self.assertEqual(writer._fd._written,
                          b'fe\xc3\xa8 fi\xc3\xa8 fo\xc3\xa8 fo\xc3\xb2')
         writer.close()

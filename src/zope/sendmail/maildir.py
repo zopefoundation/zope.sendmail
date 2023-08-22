@@ -22,7 +22,6 @@ import time
 from zope.interface import implementer
 from zope.interface import provider
 
-from zope.sendmail._compat import text_type
 from zope.sendmail.interfaces import IMaildir
 from zope.sendmail.interfaces import IMaildirFactory
 from zope.sendmail.interfaces import IMaildirMessageWriter
@@ -30,7 +29,7 @@ from zope.sendmail.interfaces import IMaildirMessageWriter
 
 @provider(IMaildirFactory)
 @implementer(IMaildir)
-class Maildir(object):
+class Maildir:
     """See :class:`zope.sendmail.interfaces.IMaildir`"""
 
     def __init__(self, path, create=False):
@@ -114,13 +113,13 @@ class Maildir(object):
 
 
 def _encode_utf8(s):
-    if isinstance(s, text_type):
+    if isinstance(s, str):
         s = s.encode('utf-8')
     return s
 
 
 @implementer(IMaildirMessageWriter)
-class MaildirMessageWriter(object):
+class MaildirMessageWriter:
     """See :class:`zope.sendmail.interfaces.IMaildirMessageWriter`"""
 
     def __init__(self, fd, filename, new_filename):

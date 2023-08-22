@@ -37,21 +37,19 @@ from zope.sendmail.maildir import Maildir
 # zope.sendmail which defined QueueProcessorThread in this module
 from zope.sendmail.queue import QueueProcessorThread  # noqa: F401
 
-from ._compat import PY2
-
 
 log = logging.getLogger("MailDataManager")
 
 
 @implementer(IDataManagerSavepoint)
-class _NoOpSavepoint(object):
+class _NoOpSavepoint:
 
     def rollback(self):
         return
 
 
 @implementer(ISavepointDataManager)
-class MailDataManager(object):
+class MailDataManager:
 
     def __init__(self, callable, args=(), vote=None, onAbort=None):
         self.callable = callable
@@ -108,7 +106,7 @@ class MailDataManager(object):
     tpc_abort = abort
 
 
-class AbstractMailDelivery(object):
+class AbstractMailDelivery:
 
     def newMessageId(self):
         """Generates a new message ID according to RFC 2822 rules"""
@@ -116,7 +114,7 @@ class AbstractMailDelivery(object):
         left_part = '%s.%d.%d' % (strftime('%Y%m%d%H%M%S'),
                                   os.getpid(),
                                   randrange(0, randmax))
-        return "%s@%s" % (left_part, gethostname())
+        return f"{left_part}@{gethostname()}"
 
     def send(self, fromaddr, toaddrs, message):
         # Switch the message to be bytes immediately, any encoding
@@ -132,10 +130,7 @@ class AbstractMailDelivery(object):
                 else b'\r\n'
             header = message.split(line_sep * 2, 1)[0]
 
-        if PY2:
-            parse = email.parser.Parser().parsestr  # pragma: PY2
-        else:
-            parse = email.parser.BytesParser().parsebytes  # pragma: PY3
+        parse = email.parser.BytesParser().parsebytes
         messageid = parse(header).get('Message-Id')
         if messageid:
             if not messageid.startswith('<') or not messageid.endswith('>'):
