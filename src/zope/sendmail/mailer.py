@@ -1,4 +1,3 @@
-# coding=utf-8
 ##############################################################################
 #
 # Copyright (c) 2003 Zope Foundation and Contributors.
@@ -22,8 +21,6 @@ from threading import local
 
 from zope.interface import implementer
 
-from zope.sendmail._compat import PY2
-from zope.sendmail._compat import text_type
 from zope.sendmail.interfaces import ISMTPMailer
 
 
@@ -34,7 +31,7 @@ class _SMTPState(local):
 
 
 @implementer(ISMTPMailer)
-class SMTPMailer(object):
+class SMTPMailer:
     """Implementation of :class:`zope.sendmail.interfaces.ISMTPMailer`."""
 
     smtp = SMTP
@@ -103,10 +100,6 @@ class SMTPMailer(object):
         if connection.does_esmtp:
             if self.username is not None and self.password is not None:
                 username, password = self.username, self.password
-                if PY2 and isinstance(username, text_type):
-                    username = username.encode('utf-8')  # pragma: PY2
-                if PY2 and isinstance(password, text_type):
-                    password = password.encode('utf-8')  # pragma: PY2
                 connection.login(username, password)
         elif self.username:
             raise RuntimeError(

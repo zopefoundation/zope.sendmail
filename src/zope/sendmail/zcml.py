@@ -56,20 +56,20 @@ class IDeliveryDirective(Interface):
     registration."""
 
     name = TextLine(
-        title=u"Name",
-        description=u'Specifies the Delivery name of the mail utility. '
-                    u'The default is "Mail".',
-        default=u"Mail",
+        title="Name",
+        description='Specifies the Delivery name of the mail utility. '
+                    'The default is "Mail".',
+        default="Mail",
         required=False)
 
     mailer = TextLine(
-        title=u"Mailer",
-        description=u"Defines the mailer to be used for sending mail.",
+        title="Mailer",
+        description="Defines the mailer to be used for sending mail.",
         required=True)
 
     permission = Permission(
-        title=u"Permission",
-        description=u"Defines the permission needed to use this service.",
+        title="Permission",
+        description="Defines the permission needed to use this service.",
         required=False)
 
 
@@ -78,14 +78,14 @@ class IQueuedDeliveryDirective(IDeliveryDirective):
     should be only called once during startup."""
 
     queuePath = Path(
-        title=u"Queue Path",
-        description=u"Defines the path for the queue directory.",
+        title="Queue Path",
+        description="Defines the path for the queue directory.",
         required=True)
 
     processorThread = Bool(
-        title=u"Run Queue Processor Thread",
-        description=(u"Indicates whether to run queue processor in a thread "
-                     u"in this process."),
+        title="Run Queue Processor Thread",
+        description=("Indicates whether to run queue processor in a thread "
+                     "in this process."),
         required=False,
         default=True)
 
@@ -147,8 +147,8 @@ class IMailerDirective(Interface):
     """A generic directive registering a mailer for the mail utility."""
 
     name = TextLine(
-        title=u"Name",
-        description=u"Name of the Mailer.",
+        title="Name",
+        description="Name of the Mailer.",
         required=True)
 
 
@@ -156,25 +156,25 @@ class ISMTPMailerDirective(IMailerDirective):
     """Registers a new SMTP mailer."""
 
     hostname = ASCIILine(
-        title=u"Hostname",
-        description=u"Hostname of the SMTP host.",
+        title="Hostname",
+        description="Hostname of the SMTP host.",
         default="localhost",
         required=False)
 
     port = Int(
-        title=u"Port",
-        description=u"Port of the SMTP server.",
+        title="Port",
+        description="Port of the SMTP server.",
         default=25,
         required=False)
 
     username = TextLine(
-        title=u"Username",
-        description=u"A username for SMTP AUTH.",
+        title="Username",
+        description="A username for SMTP AUTH.",
         required=False)
 
     password = TextLine(
-        title=u"Password",
-        description=u"A password for SMTP AUTH.",
+        title="Password",
+        description="A password for SMTP AUTH.",
         required=False)
 
 

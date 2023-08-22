@@ -33,7 +33,7 @@ from zope.sendmail.interfaces import IMailer
 
 
 @implementer(IMailer)
-class MailerStub(object):
+class MailerStub:
 
     def __init__(self, *args, **kw):
         self.sent_messages = []
@@ -103,13 +103,8 @@ class TestMailDataManager(unittest.TestCase):
 
 class TestAbstractMailDelivery(unittest.TestCase):
 
-    # Avoid DeprecationWarning for assertRaisesRegexp on Python 3 while
-    # coping with Python 2 not having the Regex spelling variant
-    assertRaisesRegex = getattr(unittest.TestCase, 'assertRaisesRegex',
-                                unittest.TestCase.assertRaisesRegexp)
-
     def test_bad_message_id(self):
-        class Parser(object):
+        class Parser:
             def parsestr(self, s, headersonly=False):
                 return {'Message-Id': 'bad id'}
 
@@ -242,7 +237,7 @@ class TestDirectMailDelivery(unittest.TestCase):
     def test_old_mailer_without_vote(self):
         import warnings
 
-        class OldMailer(object):
+        class OldMailer:
             def send(self):
                 raise NotImplementedError()
             abort = send
@@ -287,7 +282,7 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual([b'Subject: one', b'Subject: three'], subjects)
 
 
-class MaildirWriterStub(object):
+class MaildirWriterStub:
 
     data = b''
     commited_messages = []  # this list is shared among all instances
@@ -322,7 +317,7 @@ class MaildirWriterStub(object):
         self.aborted_messages.append(self.data)
 
 
-class MaildirStub(object):
+class MaildirStub:
 
     def __init__(self, path, create=False):
         self.path = path
@@ -356,7 +351,7 @@ class WritableMaildirStub(MaildirStub):
     STUB_DEFAULT_MESSAGE_RECPT = ('bar@example.com', 'baz@example.com')
 
     def __init__(self, test, *args, **kwargs):
-        super(WritableMaildirStub, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.stub_directory = tempfile.mkdtemp(suffix=".test_maildir")
         test.addCleanup(shutil.rmtree, self.stub_directory)
 
@@ -399,7 +394,7 @@ class WritableMaildirStub(MaildirStub):
         return tmp_filename
 
 
-class LoggerStub(object):
+class LoggerStub:
 
     def __init__(self):
         self.infos = []
@@ -423,7 +418,7 @@ class BizzarreMailError(IOError):
 
 
 @implementer(IMailer)
-class BrokenMailerStub(object):
+class BrokenMailerStub:
 
     def __init__(self, *args, **kw):
         pass
@@ -436,7 +431,7 @@ class BrokenMailerStub(object):
 
 
 @implementer(IMailer)
-class RefusingMailerStub(object):
+class RefusingMailerStub:
 
     def __init__(self, *args, **kw):
         pass
@@ -451,7 +446,7 @@ class RefusingMailerStub(object):
 
 
 @implementer(IMailer)
-class SMTPResponseExceptionMailerStub(object):
+class SMTPResponseExceptionMailerStub:
 
     def __init__(self, code):
         self.code = code

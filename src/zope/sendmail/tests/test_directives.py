@@ -31,16 +31,16 @@ from zope.sendmail.interfaces import IMailer
 from zope.sendmail.interfaces import ISMTPMailer
 
 
-class MaildirStub(object):
+class MaildirStub:
     pass
 
 
 @implementer(IMailer)
-class Mailer(object):
+class Mailer:
     pass
 
 
-class MockQueueProcessorThread(object):
+class MockQueueProcessorThread:
 
     def setMailer(self, mailer):
         pass
@@ -54,7 +54,7 @@ class MockQueueProcessorThread(object):
 class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def setUp(self):
-        super(DirectivesTest, self).setUp()
+        super().setUp()
 
         self.mailbox = os.path.join(tempfile.mkdtemp(), "mailbox")
         self.addCleanup(shutil.rmtree, self.mailbox, True)
@@ -66,7 +66,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         gsm.registerUtility(self.testMailer, IMailer, "test.mailer")
 
         here = os.path.dirname(__file__)
-        with open(os.path.join(here, "mail.zcml"), 'r') as f:
+        with open(os.path.join(here, "mail.zcml")) as f:
             self.zcml = f.read()
         self.zcml = self.zcml.replace('path/to/tmp/mailbox', self.mailbox)
 
@@ -81,7 +81,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         delivery.Maildir = self.orig_maildir
         zcml.QueueProcessorThread = self.orig_quethread
 
-        super(DirectivesTest, self).tearDown()
+        super().tearDown()
 
     def testQueuedDelivery(self):
         delivery = zope.component.getUtility(IMailDelivery, "Mail")

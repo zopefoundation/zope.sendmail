@@ -19,6 +19,7 @@ __docformat__ = 'restructuredtext'
 
 import argparse
 import atexit
+import configparser
 import errno
 import logging
 import os
@@ -42,10 +43,6 @@ else:
     _os_link = os.link
     pywintypes = None
 
-try:
-    import ConfigParser as configparser
-except ImportError:  # pragma: PY3
-    import configparser
 
 # The longest time sending a file is expected to take.  Longer than this and
 # the send attempt will be assumed to have failed.  This means that sending
@@ -123,7 +120,7 @@ class QueueProcessorThread(threading.Thread):
             self, name="zope.sendmail.queue.QueueProcessorThread")
         self.interval = interval
         self._lock = threading.Lock()
-        self.setDaemon(True)
+        self.daemon = True
 
     def setMaildir(self, maildir):
         """Set the maildir.
@@ -358,7 +355,7 @@ def string_or_none(s):
     return s
 
 
-class ConsoleApp(object):
+class ConsoleApp:
     """Allows running of Queue Processor from the console."""
 
     INI_SECTION = "app:zope-sendmail"
@@ -490,7 +487,7 @@ class ConsoleApp(object):
     def _load_config(self, path):
         section = self.INI_SECTION
         names = self.INI_NAMES
-        defaults = dict([(name, str(getattr(self, name))) for name in names])
+        defaults = {name: str(getattr(self, name)) for name in names}
         config = configparser.ConfigParser(defaults)
         config.read(path)
         self.interval = float(config.get(section, "interval"))

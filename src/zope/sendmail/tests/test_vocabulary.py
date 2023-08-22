@@ -32,7 +32,7 @@ class MailDeliveryNamesTests(PlacelessSetup, unittest.TestCase):
         from zope.sendmail.vocabulary import MailDeliveryNames
 
         @implementer(IMailDelivery)
-        class StubMailDelivery(object):
+        class StubMailDelivery:
             pass
 
         for name in names:
