@@ -138,7 +138,7 @@ class AbstractMailDelivery:
             messageid = messageid[1:-1]
         else:
             messageid = self.newMessageId()
-            message = b'Message-Id: <%s>\n%s' % (messageid.encode(), message)
+            message = b'Message-Id: <%s>\r\n%s' % (messageid.encode(), message)
         transaction.get().join(
             self.createDataManager(fromaddr, toaddrs, message))
         return messageid
