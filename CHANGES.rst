@@ -2,7 +2,7 @@
  Changes
 =========
 
-6.1 (unreleased)
+6.1 (2024-02-07)
 ================
 
 - Fix SMTP protocol interoperability by avoiding hardcoded line endings.
