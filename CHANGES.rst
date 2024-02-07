@@ -5,6 +5,9 @@
 6.1 (unreleased)
 ================
 
+- Fix SMTP protocol interoperability by avoiding hardcoded line endings.
+  (see https://www.rfc-editor.org/rfc/rfc2821#section-2.3.7)
+
 - Add preliminary support for Python 3.13 as of 3.13a3.
 
 - Add support for Python 3.12.
