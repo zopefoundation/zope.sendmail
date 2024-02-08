@@ -1,0 +1,4 @@
+Sphinx
+repoze.sphinx.autointerface
+sphinxcontrib.programoutput
+zope.sendmail
