@@ -127,20 +127,22 @@ class TestDirectMailDelivery(unittest.TestCase):
         verifyObject(IDirectMailDelivery, delivery)
         self.assertEqual(delivery.mailer, mailer)
 
-    def testSend(self, send_unicode=False, message=None):
+    def testSend(self, send_unicode=False, message=None, line_sep='\n'):
         mailer = MailerStub()
         delivery = DirectMailDelivery(mailer)
         fromaddr = 'Jim <jim@example.com'
         toaddrs = ('Guido <guido@example.com>',
                    'Steve <steve@examplecom>')
-        opt_headers = (b'From: Jim <jim@example.org>\n'
-                       b'To: some-zope-coders:;\n'
-                       b'Date: Mon, 19 May 2003 10:17:36 -0400\n'
-                       b'Message-Id: <20030519.1234@example.org>\n')
+        sep_dict = {b'line_sep': line_sep.encode()}
+        opt_headers = (
+            b'From: Jim <jim@example.org>%(line_sep)s'
+            b'To: some-zope-coders:;%(line_sep)s'
+            b'Date: Mon, 19 May 2003 10:17:36 -0400%(line_sep)s'
+            b'Message-Id: <20030519.1234@example.org>%(line_sep)s' % sep_dict)
         if message is None:
-            message = (b'Subject: example\n'
-                       b'\n'
-                       b'This is just an example\n')
+            message = (b'Subject: example%(line_sep)s'
+                       b'%(line_sep)s'
+                       b'This is just an example%(line_sep)s' % sep_dict)
 
         if send_unicode:
             opt_headers_bytes = opt_headers
@@ -169,7 +171,8 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(mailer.sent_messages[0][1], toaddrs)
         self.assertTrue(mailer.sent_messages[0][2].endswith(message_bytes))
         new_headers = mailer.sent_messages[0][2][:-len(message_bytes)]
-        self.assertIn(('Message-Id: <%s>' % msgid).encode(), new_headers)
+        self.assertIn(('Message-Id: <%s>%s' % (msgid, line_sep)).encode(),
+                      new_headers)
 
         mailer.sent_messages = []
         msgid = delivery.send(fromaddr, toaddrs, opt_headers + message)
@@ -190,6 +193,9 @@ class TestDirectMailDelivery(unittest.TestCase):
                    b'\n'
                    b'\xfc')
         self.testSend(message=message)
+
+    def testSendCLRFLineSeparator(self):
+        self.testSend(line_sep='\r\n')
 
     def testBrokenMailerErrorsAreEaten(self):
         from zope.testing.loggingsupport import InstalledHandler

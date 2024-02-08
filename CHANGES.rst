@@ -2,10 +2,15 @@
  Changes
 =========
 
-6.1 (unreleased)
+6.1 (2024-02-07)
 ================
 
-- Nothing changed yet.
+- Fix SMTP protocol interoperability by avoiding hardcoded line endings.
+  (see https://www.rfc-editor.org/rfc/rfc2821#section-2.3.7)
+
+- Add preliminary support for Python 3.13 as of 3.13a3.
+
+- Add support for Python 3.12.
 
 
 6.0 (2023-08-22)
