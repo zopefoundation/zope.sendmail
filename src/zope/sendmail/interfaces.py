@@ -178,7 +178,9 @@ class ISMTPMailer(IMailer):
 
     implicit_tls = Bool(
         title=_("Implicit TLS"),
-        description=_("Use TLS from the beginning of the connection. force_tls and no_tls are ignored if this is set."),)
+        description=_(
+            "Use TLS from the beginning of the connection. "
+            "force_tls and no_tls are ignored if this is set."),)
 
 
 class IMaildirFactory(Interface):

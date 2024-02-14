@@ -48,8 +48,8 @@ class SMTPMailer:
         self.no_tls = no_tls
         self.implicit_tls = implicit_tls
         self._smtp = _SMTPState()
-        # this is for backwards compatibility, in case someone has been overrided
-        # this class with a custom `smtp` attribute
+        # this is for backwards compatibility, in case someone has been
+        # overrided this class with a custom `smtp` attribute.
         if self.smtp is None:
             self.smtp = SMTP_SSL if self.implicit_tls else SMTP
 
