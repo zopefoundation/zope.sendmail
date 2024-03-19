@@ -190,5 +190,6 @@ def smtpMailer(_context, name, hostname="localhost", port="25",
         discriminator=('utility', IMailer, name),
         callable=handler,
         args=('registerUtility',
-              SMTPMailer(hostname, port, username, password, implicit_tls), IMailer, name)
+              SMTPMailer(hostname, port, username, password, implicit_tls),
+              IMailer, name)
     )
