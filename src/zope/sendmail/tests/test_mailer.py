@@ -296,6 +296,7 @@ class TestSMTPMailer(unittest.TestCase):
         SMTPMailer.smtp = CustomSMTP
         mailer = SMTPMailer()
         self.assertIs(mailer.smtp, CustomSMTP)
+        SMTPMailer.smtp = None
 
 
 class TestSMTPMailerWithNoEHLO(TestSMTPMailer):

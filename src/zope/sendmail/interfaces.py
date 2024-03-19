@@ -179,7 +179,8 @@ class ISMTPMailer(IMailer):
     implicit_tls = Bool(
         title=_("Implicit TLS"),
         description=_(
-            "Use TLS from the beginning of the connection. "
+            "Use TLS from the beginning of the connection, "
+            "known as SMTPS and commonly used on TCP port 465. "
             "force_tls and no_tls are ignored if this is set."),)
 
 

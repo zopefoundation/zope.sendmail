@@ -177,12 +177,18 @@ class ISMTPMailerDirective(IMailerDirective):
         description="A password for SMTP AUTH.",
         required=False)
 
+    implicit_tls = Bool(
+        title="Implicit TLS",
+        description="Use TLS from the beginning of the connection",
+        required=False,
+        default=False)
+
 
 def smtpMailer(_context, name, hostname="localhost", port="25",
-               username=None, password=None):
+               username=None, password=None, implicit_tls=False):
     _context.action(
         discriminator=('utility', IMailer, name),
         callable=handler,
         args=('registerUtility',
-              SMTPMailer(hostname, port, username, password), IMailer, name)
+              SMTPMailer(hostname, port, username, password, implicit_tls), IMailer, name)
     )
