@@ -284,7 +284,7 @@ class TestSMTPMailer(unittest.TestCase):
                 "Mailhost does not support ESMTP but a username"):
             self.mailer.send(None, None, None)
 
-    def test_mailer_implicit_tsl(self):
+    def test_mailer_implicit_tls(self):
         mailer = SMTPMailer(implicit_tls=True)
         isinstance(mailer.smtp, smtplib.SMTP_SSL)
 
