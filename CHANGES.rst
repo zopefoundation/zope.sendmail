@@ -2,7 +2,7 @@
  Changes
 =========
 
-6.2 (unreleased)
+6.2 (2024-03-21)
 ================
 
 - Add implicit_tls option to the Mailer, if setted to True the SMTP connection will use smtplib.SMTP_SSL
