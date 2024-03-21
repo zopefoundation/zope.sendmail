@@ -5,6 +5,9 @@
 6.2 (unreleased)
 ================
 
+- Add implicit_tls option to the Mailer, if setted to True the SMTP connection will use smtplib.SMTP_SSL
+  and starts the connection with SSL from the beginning.
+  (see `RFC8314 <https://datatracker.ietf.org/doc/html/rfc8314#section-3.3>`_)
 
 6.1 (2024-02-07)
 ================

@@ -16,6 +16,7 @@
 __docformat__ = 'restructuredtext'
 
 from smtplib import SMTP
+from smtplib import SMTP_SSL
 from ssl import SSLError
 from threading import local
 
@@ -34,17 +35,23 @@ class _SMTPState(local):
 class SMTPMailer:
     """Implementation of :class:`zope.sendmail.interfaces.ISMTPMailer`."""
 
-    smtp = SMTP
+    smtp = None
 
     def __init__(self, hostname='localhost', port=25,
-                 username=None, password=None, no_tls=False, force_tls=False):
+                 username=None, password=None, no_tls=False, force_tls=False,
+                 implicit_tls=False):
         self.hostname = hostname
         self.port = port
         self.username = username
         self.password = password
         self.force_tls = force_tls
         self.no_tls = no_tls
+        self.implicit_tls = implicit_tls
         self._smtp = _SMTPState()
+        # this is for backwards compatibility, in case someone has been
+        # overrided this class with a custom `smtp` attribute.
+        if self.smtp is None:
+            self.smtp = SMTP_SSL if self.implicit_tls else SMTP
 
     def _make_property(name):
         return property(lambda self: getattr(self._smtp, name),
@@ -89,13 +96,14 @@ class SMTPMailer:
         connection = self.connection
 
         # encryption support
-        have_tls = connection.has_extn('starttls')
-        if not have_tls and self.force_tls:
-            raise RuntimeError('TLS is not available but TLS is required')
+        if not self.implicit_tls:
+            have_tls = connection.has_extn('starttls')
+            if not have_tls and self.force_tls:
+                raise RuntimeError('TLS is not available but TLS is required')
 
-        if have_tls and not self.no_tls:
-            connection.starttls()
-            connection.ehlo()
+            if have_tls and not self.no_tls:
+                connection.starttls()
+                connection.ehlo()
 
         if connection.does_esmtp:
             if self.username is not None and self.password is not None:

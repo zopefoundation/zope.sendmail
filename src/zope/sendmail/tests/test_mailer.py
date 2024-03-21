@@ -14,6 +14,7 @@
 """Tests for mailers.
 """
 
+import smtplib
 import unittest
 from functools import partial
 from ssl import SSLError
@@ -282,6 +283,20 @@ class TestSMTPMailer(unittest.TestCase):
                 RuntimeError,
                 "Mailhost does not support ESMTP but a username"):
             self.mailer.send(None, None, None)
+
+    def test_mailer_implicit_tls(self):
+        mailer = SMTPMailer(implicit_tls=True)
+        isinstance(mailer.smtp, smtplib.SMTP_SSL)
+
+    def test_monkeypatch_smtp(self):
+        class CustomSMTP:
+            pass
+
+        # monkeypatching the class
+        SMTPMailer.smtp = CustomSMTP
+        mailer = SMTPMailer()
+        self.assertIs(mailer.smtp, CustomSMTP)
+        SMTPMailer.smtp = None
 
 
 class TestSMTPMailerWithNoEHLO(TestSMTPMailer):
