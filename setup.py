@@ -96,8 +96,6 @@ setup(
         # these are only needed for zcml
         'zope.configuration',
     ],
-    tests_require=TESTS_REQUIRE,
-    test_suite='zope.sendmail.tests',
     include_package_data=True,
     zip_safe=False,
     entry_points="""
