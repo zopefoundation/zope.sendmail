@@ -117,7 +117,7 @@
 - Fix SSL support on Python 3. See `issue 9
   <https://github.com/zopefoundation/zope.sendmail/issues/9>`_.
 
-- Reach 100% test coverage and maintain it via tox.ini and Travis CI.
+- Reach 100% test coverage and maintain it via tox.ini and CI.
 
 - Replaced deprecated dependency on ``optparse`` with equivalent
   ``argparse``. The help messages have changed and errors are
@@ -140,7 +140,7 @@
 4.0.0 (2014-12-20)
 ==================
 
-- Add support for testing on Travis-CI against supported Python verisons.
+- Add support for testing in CI against supported Python verisons.
 
 - Drop use of ``zope.testrunner`` for testing.
 
