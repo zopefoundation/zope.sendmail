@@ -127,7 +127,7 @@ class AbstractMailDelivery:
                 message = message.encode('utf-8')
             # determine line separator type (assumes consistency)
             nli = message.find(b'\n')
-            line_sep = b'\n' if nli < 1 or message[nli-1:nli] != b'\r' \
+            line_sep = b'\n' if nli < 1 or message[nli - 1:nli] != b'\r' \
                 else b'\r\n'
             header = message.split(line_sep * 2, 1)[0]
 

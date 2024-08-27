@@ -48,7 +48,7 @@ else:
 # the send attempt will be assumed to have failed.  This means that sending
 # very large files or using very slow mail servers could result in duplicate
 # messages sent.
-MAX_SEND_TIME = 60*60*3
+MAX_SEND_TIME = 60 * 60 * 3
 
 # The below diagram depicts the operations performed while sending a message in
 # the ``run`` method of ``QueueProcessorThread``.  This sequence of operations

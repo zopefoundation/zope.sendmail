@@ -171,7 +171,7 @@ class TestDirectMailDelivery(unittest.TestCase):
         self.assertEqual(mailer.sent_messages[0][1], toaddrs)
         self.assertTrue(mailer.sent_messages[0][2].endswith(message_bytes))
         new_headers = mailer.sent_messages[0][2][:-len(message_bytes)]
-        self.assertIn(('Message-Id: <%s>%s' % (msgid, line_sep)).encode(),
+        self.assertIn((f'Message-Id: <{msgid}>{line_sep}').encode(),
                       new_headers)
 
         mailer.sent_messages = []
