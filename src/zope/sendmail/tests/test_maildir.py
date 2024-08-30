@@ -263,7 +263,7 @@ class TestMaildir(unittest.TestCase):
 
         writer.abort()
         self.assertTrue(writer._fd._closed)
-        self.assertTrue(filename1 in self.fake_os_module._removed_files)
+        self.assertIn(filename1, self.fake_os_module._removed_files)
         # Once aborted, abort does nothing
         self.fake_os_module._removed_files = ()
         writer.abort()
