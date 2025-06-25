@@ -36,7 +36,7 @@ from zope.sendmail.queue import QueueProcessorThread
 try:
     from zope.component.security import proxify
     from zope.security.zcml import Permission
-except ImportError:  # pragma: no cover
+except ModuleNotFoundError:  # pragma: no cover
     SECURITY_SUPPORT = False
     Permission = TextLine
 

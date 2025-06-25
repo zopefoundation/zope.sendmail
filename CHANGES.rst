@@ -5,6 +5,8 @@
 6.3 (unreleased)
 ================
 
+- Drop support for Python 3.8.
+
 - Drop support for Python 3.7.
 
 
