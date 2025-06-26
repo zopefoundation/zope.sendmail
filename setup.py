@@ -19,14 +19,13 @@
 """Setup for zope.sendmail package"""
 import os
 
-from setuptools import find_packages
 from setuptools import setup
 
 
 TESTS_REQUIRE = [
     'zope.security',
     'zope.testing',
-    'zope.testrunner',
+    'zope.testrunner >= 6.4',
 ]
 
 EXTRAS_REQUIRE = {
@@ -79,9 +78,6 @@ setup(
         'Topic :: Communications :: Email',
         'Framework :: Zope :: 3',
     ],
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    namespace_packages=['zope'],
     python_requires='>=3.9',
     extras_require=EXTRAS_REQUIRE,
     install_requires=[
