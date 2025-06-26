@@ -5,6 +5,8 @@
 7.0 (unreleased)
 ================
 
+- Replace ``pkg_resources`` namespace with PEP 420 native namespace.
+
 - Drop support for Python 3.8.
 
 - Drop support for Python 3.7.
