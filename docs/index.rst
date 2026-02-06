@@ -27,7 +27,7 @@ zope.sendmail is hosted at GitHub:
 Project URLs
 ============
 
-* https://pypi.python.org/pypi/zope.sendmail       (PyPI entry and downloads)
+* https://pypi.org/project/zope.sendmail/       (PyPI entry and downloads)
 
 
 ====================
