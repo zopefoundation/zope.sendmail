@@ -5,6 +5,10 @@
 7.1 (unreleased)
 ================
 
+- Support reading the configuration from the standard input.
+  Fix a deprecated warning about the use of ``argparse.FileType`` in Python 3.14.
+  (`#64 <https://github.com/zopefoundation/zope.sendmail/issues/64>`_).
+
 - Move package metadata from setup.py to pyproject.toml.
 
 - Add support for Python 3.14.

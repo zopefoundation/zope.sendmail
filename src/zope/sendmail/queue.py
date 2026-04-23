@@ -27,6 +27,7 @@ import smtplib
 import sys
 import threading
 import time
+from pathlib import Path
 
 from zope.sendmail.maildir import Maildir
 from zope.sendmail.mailer import SMTPMailer
@@ -355,6 +356,22 @@ def string_or_none(s):
     return s
 
 
+def _config_str(value):
+    """Validate and return a string for --config.
+
+    This preserves the old argparse.FileType() behavior used by this module.
+    """
+
+    if value == '-':
+        return value
+
+    path = Path(value)
+    if path.is_file() and os.access(path, os.R_OK):
+        return value
+
+    raise argparse.ArgumentTypeError(f"can't open '{value}' for reading")
+
+
 class ConsoleApp:
     """Allows running of Queue Processor from the console."""
 
@@ -419,7 +436,7 @@ class ConsoleApp:
     del smtp_group
     parser.add_argument(
         '--config', metavar='<inifile>',
-        type=argparse.FileType(),
+        type=_config_str,
         help=("Get configuration from specified ini file; it must "
               "contain a section [%s] that can contain the "
               "following keys: %s. If you specify the queue path "
@@ -473,9 +490,7 @@ class ConsoleApp:
         self.no_tls = opts.no_tls
 
         if opts.config:
-            fname = opts.config.name
-            opts.config.close()
-            self._load_config(fname)
+            self._load_config(opts.config)
         self.queue_path = opts.maildir or self.queue_path
 
         if not self.queue_path:
@@ -485,11 +500,17 @@ class ConsoleApp:
             self.parser.error('Must use username and password together.')
 
     def _load_config(self, path):
+
         section = self.INI_SECTION
         names = self.INI_NAMES
         defaults = {name: str(getattr(self, name)) for name in names}
         config = configparser.ConfigParser(defaults)
-        config.read(path)
+
+        if path == '-':
+            config.read_file(sys.stdin)
+        else:
+            config.read(path)
+
         self.interval = float(config.get(section, "interval"))
         self.hostname = config.get(section, "hostname")
         self.port = int(config.get(section, "port"))
