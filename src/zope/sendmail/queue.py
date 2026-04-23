@@ -446,8 +446,8 @@ class ConsoleApp:
               "command line." % (INI_SECTION, ', '.join(INI_NAMES))))
     parser.add_argument(
         "maildir", default=None, nargs="?",
-        help=("The path to the mail queue directory."
-              "If not given, it must be found in the --config file."
+        help=("The path to the mail queue directory. "
+              "If not given, it must be found in the --config file. "
               "If given, this overrides a value in the --config file"))
 
     daemon = False
