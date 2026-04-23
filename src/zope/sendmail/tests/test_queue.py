@@ -515,9 +515,31 @@ class TestConsoleApp(unittest.TestCase):
         cmdline = ['sendmail', '--config', 'this path cannot be opened']
         with self.assertRaises(SystemExit) as exc:
             self._make_one(cmdline)
-
-        self.assertIn('No such file or directory', self._get_output())
+        expected = (
+            "argument --config: can't open 'this path cannot be opened' "
+            "for reading"
+        )
+        self.assertEqual(
+            expected,
+            self._get_output().partition("error:")[2].strip())
         self.assertEqual(exc.exception.code, 2)
+
+    def test_ini_parse_stdin(self):
+        cmdline = ['sendmail', '--config', '-']
+        stdin = io.StringIO(test_ini)
+        with patched(sys, 'stdin', stdin):
+            app = self._make_one(cmdline)
+
+        self.assertEqual("sendmail", app.script_name)
+        self.assertEqual("hammer/dont/hurt/em", app.queue_path)
+        self.assertFalse(app.daemon)
+        self.assertEqual(33, app.interval)
+        self.assertEqual("testhost", app.hostname)
+        self.assertEqual(2525, app.port)
+        self.assertEqual("Chris", app.username)
+        self.assertEqual("Rossi", app.password)
+        self.assertFalse(app.force_tls)
+        self.assertTrue(app.no_tls)
 
     def test_run(self):
         cmdline = ['sendmail', self.dir]
