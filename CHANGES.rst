@@ -5,6 +5,9 @@
 7.1 (unreleased)
 ================
 
+- iimprove the help message
+  (`#66 <https://github.com/zopefoundation/zope.sendmail/issues/66>`_).
+
 - Support reading the configuration from the standard input.
   Fix a deprecated warning about the use of ``argparse.FileType`` in Python 3.14.
   (`#64 <https://github.com/zopefoundation/zope.sendmail/issues/64>`_).
