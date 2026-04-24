@@ -2,7 +2,7 @@
  Changes
 =========
 
-7.1 (unreleased)
+7.1 (2026-04-24)
 ================
 
 - Improve the help message
