@@ -5,7 +5,7 @@
 7.1 (unreleased)
 ================
 
-- iimprove the help message
+- Improve the help message
   (`#66 <https://github.com/zopefoundation/zope.sendmail/issues/66>`_).
 
 - Support reading the configuration from the standard input.
