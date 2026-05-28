@@ -27,6 +27,8 @@ import smtplib
 import sys
 import threading
 import time
+from email.utils import formataddr
+from email.utils import getaddresses
 from pathlib import Path
 
 from zope.sendmail.maildir import Maildir
@@ -162,8 +164,11 @@ class QueueProcessorThread(threading.Thread):
 
         if second.startswith(b"X-Zope-To: "):
             i = len(b"X-Zope-To: ")
+            value = second[i:].decode()
             toaddrs = tuple(
-                addr.decode() for addr in second[i:].split(b", ") if addr
+                formataddr((display_name, address))
+                for display_name, address in getaddresses([value])
+                if address
             )
 
         return fromaddr, toaddrs, rest

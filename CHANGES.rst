@@ -5,7 +5,8 @@
 7.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix parsing of the ``X-Zope-To`` header when it contains display names with commas.
+  (`#68 <https://github.com/zopefoundation/zope.sendmail/issues/68>`_).
 
 
 7.1 (2026-04-24)
