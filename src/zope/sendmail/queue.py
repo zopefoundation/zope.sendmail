@@ -313,9 +313,13 @@ class QueueProcessorThread(threading.Thread):
                         self.log.exception(
                             "Discarding email from %s to %s due to"
                             " a permanent error: %s",
-                            fromaddr, ", ".join(toaddrs), str(e),
-                            extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
-                        )
+                            fromaddr,
+                            ", ".join(toaddrs),
+                            str(e),
+                            extra={
+                                "fromaddr": fromaddr,
+                                "toaddrs": toaddrs,
+                                "filename": filename})
                         _os_link(filename, rejected_filename)
                     else:
                         # Log an error and retry later
@@ -325,9 +329,12 @@ class QueueProcessorThread(threading.Thread):
                     # server. Dont try to redeliver the message.
                     self.log.exception(
                         "Email recipients refused: %s",
-                        ', '.join(e.recipients),
-                        extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
-                    )
+                        ', '.join(
+                            e.recipients),
+                        extra={
+                            "fromaddr": fromaddr,
+                            "toaddrs": toaddrs,
+                            "filename": filename})
                     _os_link(filename, rejected_filename)
 
                 self._unlink_if_exists(filename)
@@ -335,17 +342,25 @@ class QueueProcessorThread(threading.Thread):
             self._unlink_if_exists(tmp_filename)
 
             # TODO: maybe log the Message-Id of the message sent
-            self.log.info("Mail from %s to %s sent.",
-                          fromaddr, ", ".join(toaddrs),
-                          extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename})
+            self.log.info(
+                "Mail from %s to %s sent.",
+                fromaddr,
+                ", ".join(toaddrs),
+                extra={
+                    "fromaddr": fromaddr,
+                    "toaddrs": toaddrs,
+                    "filename": filename})
             # Blanket except because we don't want
             # this thread to ever die
         except Exception:
             self.log.exception(
                 "Error while sending mail from %s to %s",
-                fromaddr, ", ".join(toaddrs),
-                extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
-            )
+                fromaddr,
+                ", ".join(toaddrs),
+                extra={
+                    "fromaddr": fromaddr,
+                    "toaddrs": toaddrs,
+                    "filename": filename})
 
     def stop(self):
         self._stopped = True
