@@ -5,7 +5,10 @@
 7.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Improve logging in ``QueueProcessorThread`` to include sender, recipients and
+  queue filename on delivery failures, and always attach a traceback via
+  ``log.exception``.
+  (`#71 <https://github.com/zopefoundation/zope.sendmail/issues/71>`_).
 
 
 7.1.1 (2026-06-03)

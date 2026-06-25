@@ -310,10 +310,12 @@ class QueueProcessorThread(threading.Thread):
                 except smtplib.SMTPResponseException as e:
                     if 500 <= e.smtp_code <= 599:
                         # permanent error, ditch the message
-                        self.log.error(
+                        self.log.exception(
                             "Discarding email from %s to %s due to"
                             " a permanent error: %s",
-                            fromaddr, ", ".join(toaddrs), str(e))
+                            fromaddr, ", ".join(toaddrs), str(e),
+                            extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
+                        )
                         _os_link(filename, rejected_filename)
                     else:
                         # Log an error and retry later
@@ -321,8 +323,11 @@ class QueueProcessorThread(threading.Thread):
                 except smtplib.SMTPRecipientsRefused as e:
                     # All recipients are refused by smtp
                     # server. Dont try to redeliver the message.
-                    self.log.error("Email recipients refused: %s",
-                                   ', '.join(e.recipients))
+                    self.log.exception(
+                        "Email recipients refused: %s",
+                        ', '.join(e.recipients),
+                        extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
+                    )
                     _os_link(filename, rejected_filename)
 
                 self._unlink_if_exists(filename)
@@ -331,18 +336,16 @@ class QueueProcessorThread(threading.Thread):
 
             # TODO: maybe log the Message-Id of the message sent
             self.log.info("Mail from %s to %s sent.",
-                          fromaddr, ", ".join(toaddrs))
+                          fromaddr, ", ".join(toaddrs),
+                          extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename})
             # Blanket except because we don't want
             # this thread to ever die
         except Exception:
-            if fromaddr != '' or toaddrs != ():
-                self.log.error(
-                    "Error while sending mail from %s to %s.",
-                    fromaddr, ", ".join(toaddrs), exc_info=True)
-            else:
-                self.log.error(
-                    "Error while sending mail : %s ",
-                    filename, exc_info=True)
+            self.log.exception(
+                "Error while sending mail from %s to %s",
+                fromaddr, ", ".join(toaddrs),
+                extra={"fromaddr": fromaddr, "toaddrs": toaddrs, "filename": filename}
+            )
 
     def stop(self):
         self._stopped = True
