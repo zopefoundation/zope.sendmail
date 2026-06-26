@@ -6,8 +6,10 @@
 ================
 
 - Improve logging in ``QueueProcessorThread`` to include sender, recipients and
-  queue filename on delivery failures, and always attach a traceback via
-  ``log.exception``.
+  queue filename on delivery failures. Permanent SMTP errors and refused
+  recipients are logged via ``log.error`` (these are data problems, not code
+  errors), while a traceback is only attached for genuinely unexpected
+  exceptions.
   (`#71 <https://github.com/zopefoundation/zope.sendmail/issues/71>`_).
 
 

@@ -240,7 +240,7 @@ class TestQueueProcessorThread(unittest.TestCase):
                           ('foo@example.com',
                            'bar@example.com, baz@example.com',
                            full_path,
-                           "(550, 'Serious Error')"), {'exc_info': True}))
+                           "(550, 'Serious Error')"), {}))
 
     def test_smtp_recipients_refused(self):
         # Test a permanent error
@@ -259,7 +259,7 @@ class TestQueueProcessorThread(unittest.TestCase):
                          ('Email recipients refused for %s: %s',
                           (full_path,
                            self.md.STUB_DEFAULT_MESSAGE_RECPT[0]),
-                          {'exc_info': True}))
+                          {}))
 
     def test_stop_while_running(self):
         test = self

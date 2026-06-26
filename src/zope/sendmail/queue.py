@@ -310,7 +310,7 @@ class QueueProcessorThread(threading.Thread):
                 except smtplib.SMTPResponseException as e:
                     if 500 <= e.smtp_code <= 599:
                         # permanent error, ditch the message
-                        self.log.exception(
+                        self.log.error(
                             "Discarding email from %s to %s (%s) due to"
                             " a permanent error: %s",
                             fromaddr, ", ".join(toaddrs), filename, str(e))
@@ -321,7 +321,7 @@ class QueueProcessorThread(threading.Thread):
                 except smtplib.SMTPRecipientsRefused as e:
                     # All recipients are refused by smtp
                     # server. Dont try to redeliver the message.
-                    self.log.exception(
+                    self.log.error(
                         "Email recipients refused for %s: %s",
                         filename, ', '.join(e.recipients))
                     _os_link(filename, rejected_filename)
