@@ -2,7 +2,7 @@
  Changes
 =========
 
-7.2 (unreleased)
+7.2 (2026-06-30)
 ================
 
 - Improve logging in ``QueueProcessorThread`` to include sender, recipients and
