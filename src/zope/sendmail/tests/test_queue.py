@@ -82,10 +82,12 @@ class TestQueueProcessorThread(unittest.TestCase):
         self,
         From=WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[0],
         to=", ".join(WritableMaildirStub.STUB_DEFAULT_MESSAGE_SENT[1]),
+        filename="message",
         exception_kind=None,
     ):
-        expected = ('Error while sending mail from %s to %s.',
-                    (From, to,),
+        full_path = os.path.join(self.dir, filename)
+        expected = ('Error while sending mail from %s to %s (%s).',
+                    (From, to, full_path),
                     {'exc_info': True},)
         error = self.thread.log.errors[0]
         if exception_kind:
@@ -98,8 +100,9 @@ class TestQueueProcessorThread(unittest.TestCase):
     def _assertGenericErrorLog(self, filename="message",
                                exception=None):
         full_path = os.path.join(self.dir, filename)
-        expected = ('Error while sending mail : %s ',
-                    (full_path,),
+        # No message was parsed yet, so sender and recipients are empty.
+        expected = ('Error while sending mail from %s to %s (%s).',
+                    ('', '', full_path),
                     {'exc_info': True})
         error = self.thread.log.errors[0]
         error = error[:5]
@@ -229,12 +232,15 @@ class TestQueueProcessorThread(unittest.TestCase):
         self._assertMessagePathDoesNotExist("message")
         self._assertRejectedMessagePathExists('message')
 
-        self.assertEqual(self.thread.log.errors,
-                         [('Discarding email from %s to %s due to a '
-                           'permanent error: %s',
-                           ('foo@example.com',
-                            'bar@example.com, baz@example.com',
-                            "(550, 'Serious Error')"), {})])
+        full_path = os.path.join(self.dir, "message")
+        error = self.thread.log.errors[0]
+        self.assertEqual(error[:3],
+                         ('Discarding email from %s to %s (%s) due to a '
+                          'permanent error: %s',
+                          ('foo@example.com',
+                           'bar@example.com, baz@example.com',
+                           full_path,
+                           "(550, 'Serious Error')"), {}))
 
     def test_smtp_recipients_refused(self):
         # Test a permanent error
@@ -247,9 +253,13 @@ class TestQueueProcessorThread(unittest.TestCase):
         self._assertMessagePathDoesNotExist()
         self._assertRejectedMessagePathExists()
 
-        self.assertEqual(self.thread.log.errors,
-                         [('Email recipients refused: %s',
-                           (self.md.STUB_DEFAULT_MESSAGE_RECPT[0],), {})])
+        full_path = os.path.join(self.dir, "message")
+        error = self.thread.log.errors[0]
+        self.assertEqual(error[:3],
+                         ('Email recipients refused for %s: %s',
+                          (full_path,
+                           self.md.STUB_DEFAULT_MESSAGE_RECPT[0]),
+                          {}))
 
     def test_stop_while_running(self):
         test = self

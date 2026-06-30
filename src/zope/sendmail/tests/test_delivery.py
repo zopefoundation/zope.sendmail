@@ -415,6 +415,10 @@ class LoggerStub:
             error += sys.exc_info()[:2]
         self.errors.append(error)
 
+    def exception(self, msg, *args, **kwargs):
+        kwargs["exc_info"] = True
+        self.error(msg, *args, **kwargs)
+
     def info(self, msg, *args, **kwargs):
         self.infos.append((msg, args, kwargs))
 

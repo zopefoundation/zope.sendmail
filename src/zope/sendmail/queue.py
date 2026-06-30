@@ -311,9 +311,9 @@ class QueueProcessorThread(threading.Thread):
                     if 500 <= e.smtp_code <= 599:
                         # permanent error, ditch the message
                         self.log.error(
-                            "Discarding email from %s to %s due to"
+                            "Discarding email from %s to %s (%s) due to"
                             " a permanent error: %s",
-                            fromaddr, ", ".join(toaddrs), str(e))
+                            fromaddr, ", ".join(toaddrs), filename, str(e))
                         _os_link(filename, rejected_filename)
                     else:
                         # Log an error and retry later
@@ -321,8 +321,9 @@ class QueueProcessorThread(threading.Thread):
                 except smtplib.SMTPRecipientsRefused as e:
                     # All recipients are refused by smtp
                     # server. Dont try to redeliver the message.
-                    self.log.error("Email recipients refused: %s",
-                                   ', '.join(e.recipients))
+                    self.log.error(
+                        "Email recipients refused for %s: %s",
+                        filename, ', '.join(e.recipients))
                     _os_link(filename, rejected_filename)
 
                 self._unlink_if_exists(filename)
@@ -335,14 +336,9 @@ class QueueProcessorThread(threading.Thread):
             # Blanket except because we don't want
             # this thread to ever die
         except Exception:
-            if fromaddr != '' or toaddrs != ():
-                self.log.error(
-                    "Error while sending mail from %s to %s.",
-                    fromaddr, ", ".join(toaddrs), exc_info=True)
-            else:
-                self.log.error(
-                    "Error while sending mail : %s ",
-                    filename, exc_info=True)
+            self.log.exception(
+                "Error while sending mail from %s to %s (%s).",
+                fromaddr, ", ".join(toaddrs), filename)
 
     def stop(self):
         self._stopped = True
