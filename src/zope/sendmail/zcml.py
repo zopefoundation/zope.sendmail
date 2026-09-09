@@ -187,8 +187,8 @@ class ISMTPMailerDirective(IMailerDirective):
     timeout = Float(
         title="Timeout",
         description="Timeout in seconds for the connection to the "
-                     "SMTP server. If not given, the platform default "
-                     "socket timeout is used.",
+        "SMTP server. If not given, the platform default "
+        "socket timeout is used.",
         required=False)
 
 
