@@ -23,6 +23,7 @@
 
   <mail:smtpMailer
       name="smtp2"
-      hostname="smarthost"/>
+      hostname="smarthost"
+      timeout="15"/>
 
 </configure>

@@ -15,6 +15,7 @@
 """
 
 import smtplib
+import socket
 import unittest
 from functools import partial
 from ssl import SSLError
@@ -29,9 +30,10 @@ class SMTP:
 
     fail_on_quit = False
 
-    def __init__(self, h, p):
+    def __init__(self, h, p, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         self.hostname = h
         self.port = p
+        self.timeout = timeout
         self.quitted = False
         self.closed = False
         assert isinstance(p, str)
@@ -90,8 +92,8 @@ class TestSMTPMailer(unittest.TestCase):
         else:
             mailer = SMTPMailer('localhost', port)
 
-        def _make_smtp(host, port):
-            smtp = self.SMTPClass(host, port)
+        def _make_smtp(host, port, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+            smtp = self.SMTPClass(host, port, timeout)
             if smtp_hook:
                 smtp_hook(smtp)
             return smtp
@@ -283,6 +285,21 @@ class TestSMTPMailer(unittest.TestCase):
                 RuntimeError,
                 "Mailhost does not support ESMTP but a username"):
             self.mailer.send(None, None, None)
+
+    def test_send_default_timeout(self):
+        fromaddr = 'me@example.com'
+        toaddrs = ('you@example.com',)
+        msgtext = 'Headers: headers\n\nbody\n'
+        self.mailer.send(fromaddr, toaddrs, msgtext)
+        self.assertIs(self.smtp.timeout, socket._GLOBAL_DEFAULT_TIMEOUT)
+
+    def test_send_explicit_timeout(self):
+        fromaddr = 'me@example.com'
+        toaddrs = ('you@example.com',)
+        msgtext = 'Headers: headers\n\nbody\n'
+        self.mailer.timeout = 42
+        self.mailer.send(fromaddr, toaddrs, msgtext)
+        self.assertEqual(self.smtp.timeout, 42)
 
     def test_mailer_implicit_tls(self):
         mailer = SMTPMailer(implicit_tls=True)
