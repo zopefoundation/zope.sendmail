@@ -15,7 +15,6 @@
 """
 __docformat__ = 'restructuredtext'
 
-import socket
 from smtplib import SMTP
 from smtplib import SMTP_SSL
 from ssl import SSLError
@@ -40,7 +39,7 @@ class SMTPMailer:
 
     def __init__(self, hostname='localhost', port=25,
                  username=None, password=None, no_tls=False, force_tls=False,
-                 implicit_tls=False, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+                 implicit_tls=False, timeout=None):
         self.hostname = hostname
         self.port = port
         self.username = username
@@ -66,8 +65,12 @@ class SMTPMailer:
     del _make_property
 
     def vote(self, fromaddr, toaddrs, message):
-        self.connection = self.smtp(
-            self.hostname, str(self.port), timeout=self.timeout)
+        # Only pass `timeout` along when it was explicitly set; this way
+        # `smtplib` falls back to its own default (which honors a
+        # process-wide `socket.setdefaulttimeout()`) instead of us
+        # forcing an explicit blocking connection.
+        kwargs = {} if self.timeout is None else {'timeout': self.timeout}
+        self.connection = self.smtp(self.hostname, str(self.port), **kwargs)
 
         code, response = self.connection.ehlo()
         if code < 200 or code >= 300:
