@@ -52,6 +52,7 @@ from zope.i18nmessageid import MessageFactory
 from zope.interface import Attribute
 from zope.interface import Interface
 from zope.schema import Bool
+from zope.schema import Float
 from zope.schema import Int
 from zope.schema import Password
 from zope.schema import TextLine
@@ -182,6 +183,17 @@ class ISMTPMailer(IMailer):
             "Use TLS from the beginning of the connection, "
             "known as SMTPS and commonly used on TCP port 465. "
             "force_tls and no_tls are ignored if this is set."),)
+
+    timeout = Float(
+        title=_("Timeout"),
+        description=_(
+            "Timeout in seconds for blocking operations on the "
+            "connection to the SMTP server (connecting, HELO/EHLO, "
+            "TLS negotiation, login, sending the message). "
+            "If not given, the platform default socket timeout is "
+            "used, which usually means the connection can block "
+            "indefinitely if the server stops responding."),
+        required=False)
 
 
 class IMaildirFactory(Interface):

@@ -97,6 +97,13 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
         mailer = zope.component.getUtility(IMailer, "smtp")
         self.assertTrue(ISMTPMailer.providedBy(mailer))
 
+    def testSMTPMailerTimeout(self):
+        mailer = zope.component.getUtility(IMailer, "smtp")
+        self.assertIsNone(mailer.timeout)
+
+        mailer2 = zope.component.getUtility(IMailer, "smtp2")
+        self.assertEqual(mailer2.timeout, 15)
+
     def _check_zcml_without_registration(self, utility, name):
         gsm = zope.component.getGlobalSiteManager()
         gsm.unregisterUtility(utility, IMailer, name)
