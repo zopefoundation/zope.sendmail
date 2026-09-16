@@ -291,7 +291,7 @@ class TestSMTPMailer(unittest.TestCase):
         toaddrs = ('you@example.com',)
         msgtext = 'Headers: headers\n\nbody\n'
         self.mailer.send(fromaddr, toaddrs, msgtext)
-        self.assertIs(self.smtp.timeout, socket._GLOBAL_DEFAULT_TIMEOUT)
+        self.assertEqual(self.smtp.timeout, 10)
 
     def test_send_explicit_timeout(self):
         fromaddr = 'me@example.com'
@@ -300,6 +300,14 @@ class TestSMTPMailer(unittest.TestCase):
         self.mailer.timeout = 42
         self.mailer.send(fromaddr, toaddrs, msgtext)
         self.assertEqual(self.smtp.timeout, 42)
+
+    def test_send_timeout_opt_out(self):
+        fromaddr = 'me@example.com'
+        toaddrs = ('you@example.com',)
+        msgtext = 'Headers: headers\n\nbody\n'
+        self.mailer.timeout = None
+        self.mailer.send(fromaddr, toaddrs, msgtext)
+        self.assertIs(self.smtp.timeout, socket._GLOBAL_DEFAULT_TIMEOUT)
 
     def test_mailer_implicit_tls(self):
         mailer = SMTPMailer(implicit_tls=True)

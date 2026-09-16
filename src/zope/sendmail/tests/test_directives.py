@@ -99,7 +99,7 @@ class DirectivesTest(PlacelessSetup, unittest.TestCase):
 
     def testSMTPMailerTimeout(self):
         mailer = zope.component.getUtility(IMailer, "smtp")
-        self.assertIsNone(mailer.timeout)
+        self.assertEqual(mailer.timeout, 10)
 
         mailer2 = zope.component.getUtility(IMailer, "smtp2")
         self.assertEqual(mailer2.timeout, 15)

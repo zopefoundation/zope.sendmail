@@ -39,7 +39,7 @@ class SMTPMailer:
 
     def __init__(self, hostname='localhost', port=25,
                  username=None, password=None, no_tls=False, force_tls=False,
-                 implicit_tls=False, timeout=None):
+                 implicit_tls=False, timeout=10):
         self.hostname = hostname
         self.port = port
         self.username = username
@@ -65,10 +65,10 @@ class SMTPMailer:
     del _make_property
 
     def vote(self, fromaddr, toaddrs, message):
-        # Only pass `timeout` along when it was explicitly set; this way
-        # `smtplib` falls back to its own default (which honors a
-        # process-wide `socket.setdefaulttimeout()`) instead of us
-        # forcing an explicit blocking connection.
+        # `timeout=None` is the explicit opt-out: it is only passed along
+        # when set, so `smtplib` falls back to its own default (which
+        # honors a process-wide `socket.setdefaulttimeout()`) instead of
+        # us forcing an explicit blocking connection.
         kwargs = {} if self.timeout is None else {'timeout': self.timeout}
         self.connection = self.smtp(self.hostname, str(self.port), **kwargs)
 

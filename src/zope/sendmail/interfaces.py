@@ -190,9 +190,7 @@ class ISMTPMailer(IMailer):
             "Timeout in seconds for blocking operations on the "
             "connection to the SMTP server (connecting, HELO/EHLO, "
             "TLS negotiation, login, sending the message). "
-            "If not given, the platform default socket timeout is "
-            "used, which usually means the connection can block "
-            "indefinitely if the server stops responding."),
+            "Defaults to 10 seconds."),
         required=False)
 
 

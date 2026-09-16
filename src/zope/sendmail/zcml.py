@@ -187,14 +187,13 @@ class ISMTPMailerDirective(IMailerDirective):
     timeout = Float(
         title="Timeout",
         description="Timeout in seconds for the connection to the "
-        "SMTP server. If not given, the platform default "
-        "socket timeout is used.",
+        "SMTP server. Defaults to 10 seconds.",
         required=False)
 
 
 def smtpMailer(_context, name, hostname="localhost", port="25",
                username=None, password=None, implicit_tls=False,
-               timeout=None):
+               timeout=10):
     _context.action(
         discriminator=('utility', IMailer, name),
         callable=handler,
