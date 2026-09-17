@@ -191,7 +191,8 @@ class ISMTPMailer(IMailer):
             "connection to the SMTP server (connecting, HELO/EHLO, "
             "TLS negotiation, login, sending the message). "
             "Defaults to 10 seconds."),
-        required=False)
+        required=False,
+        default=10.0)
 
 
 class IMaildirFactory(Interface):

@@ -188,7 +188,8 @@ class ISMTPMailerDirective(IMailerDirective):
         title="Timeout",
         description="Timeout in seconds for the connection to the "
         "SMTP server. Defaults to 10 seconds.",
-        required=False)
+        required=False,
+        default=10.0)
 
 
 def smtpMailer(_context, name, hostname="localhost", port="25",
