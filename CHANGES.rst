@@ -5,7 +5,16 @@
 7.3 (unreleased)
 ================
 
-- Nothing changed yet.
+- Add a ``timeout`` parameter to ``SMTPMailer`` (and to the
+  ``smtpMailer`` ZCML directive) to control the socket timeout used
+  when connecting and talking to the SMTP server. Previously no
+  timeout was passed to ``smtplib``, so a connection could hang
+  indefinitely if the server stopped responding.
+
+  ``SMTPMailer`` now defaults to a 10 second timeout instead of
+  blocking indefinitely. This is a behavior change: pass
+  ``timeout=None`` explicitly to restore the previous unbounded
+  behavior.
 
 
 7.2 (2026-06-30)

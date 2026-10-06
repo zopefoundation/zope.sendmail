@@ -22,6 +22,7 @@ from zope.configuration.fields import Path
 from zope.interface import Interface
 from zope.schema import ASCIILine
 from zope.schema import Bool
+from zope.schema import Float
 from zope.schema import Int
 from zope.schema import TextLine
 
@@ -183,13 +184,22 @@ class ISMTPMailerDirective(IMailerDirective):
         required=False,
         default=False)
 
+    timeout = Float(
+        title="Timeout",
+        description="Timeout in seconds for the connection to the "
+        "SMTP server. Defaults to 10 seconds.",
+        required=False,
+        default=10.0)
+
 
 def smtpMailer(_context, name, hostname="localhost", port="25",
-               username=None, password=None, implicit_tls=False):
+               username=None, password=None, implicit_tls=False,
+               timeout=10):
     _context.action(
         discriminator=('utility', IMailer, name),
         callable=handler,
         args=('registerUtility',
-              SMTPMailer(hostname, port, username, password, implicit_tls),
+              SMTPMailer(hostname, port, username, password, implicit_tls,
+                         timeout=timeout),
               IMailer, name)
     )
