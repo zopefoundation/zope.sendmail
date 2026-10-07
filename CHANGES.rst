@@ -2,7 +2,7 @@
  Changes
 =========
 
-7.3 (unreleased)
+7.3 (2026-10-07)
 ================
 
 - Add a ``timeout`` parameter to ``SMTPMailer`` (and to the
