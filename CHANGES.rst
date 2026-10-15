@@ -5,7 +5,7 @@
 7.4 (unreleased)
 ================
 
-- Nothing changed yet.
+- Drop support for Python 3.10.
 
 
 7.3 (2026-10-07)
